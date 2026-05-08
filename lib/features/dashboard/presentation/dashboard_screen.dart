@@ -103,9 +103,7 @@ class _WelcomeCard extends StatelessWidget {
     return Card(
       elevation: 0,
       color: Theme.of(context).colorScheme.primaryContainer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       child: Padding(
         padding: const EdgeInsets.all(22),
         child: Column(
@@ -113,16 +111,14 @@ class _WelcomeCard extends StatelessWidget {
           children: [
             Text(
               'Welcome, $displayName',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(email.isEmpty ? 'No email found' : email),
             const SizedBox(height: 12),
-            Chip(
-              label: Text('Signed in with $authProvider'),
-            ),
+            Chip(label: Text('Signed in with $authProvider')),
           ],
         ),
       ),
@@ -147,22 +143,14 @@ class _DashboardInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 10,
         ),
-        leading: Icon(
-          icon,
-          color: Colors.deepPurple,
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        leading: Icon(icon, color: Colors.deepPurple),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(description),
         trailing: Text(
           value,
