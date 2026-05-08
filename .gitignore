@@ -1,45 +1,147 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# -------------------------
+# Flutter / Dart
+# -------------------------
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
-/build/
-/coverage/
+build/
 
-# Symbolication related
-app.*.symbols
+# Flutter generated env
+*.kernel
+*.dill
+*.snapshot
 
-# Obfuscation related
-app.*.map.json
+# Pub lock
+# For apps, keep pubspec.lock committed.
+# Do NOT ignore pubspec.lock.
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# -------------------------
+# Android / Gradle
+# -------------------------
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/key.properties
+android/*.jks
+android/*.keystore
+android/app/*.jks
+android/app/*.keystore
+
+# Android Studio
+.idea/
+*.iml
+
+# Keep this ignored if using local SDK path
+local.properties
+
+# -------------------------
+# iOS / macOS
+# -------------------------
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/build/
+ios/Runner.xcworkspace/
+ios/Runner/GeneratedPluginRegistrant.*
+
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/Runner.xcworkspace/
+
+# iOS signing
+*.mobileprovision
+*.cer
+*.p12
+
+# -------------------------
+# Linux / Web build outputs
+# -------------------------
+linux/flutter/ephemeral/
+web/.dart_tool/
+
+# -------------------------
+# Firebase
+# -------------------------
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+
+# Firebase local emulator data
+firebase-export-*/
+emulator-data/
+*.local
+
+# Firebase service account keys
+*service-account*.json
+*firebase-adminsdk*.json
+serviceAccountKey.json
+
+# Optional: ignore real Firebase client config for public GitHub
+# If repo is public, keep these ignored and commit example files instead.
+lib/firebase_options.dart
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+
+# -------------------------
+# Cloud Functions
+# -------------------------
+functions/node_modules/
+functions/lib/
+functions/dist/
+functions/.runtimeconfig.json
+functions/firebase-debug.log
+functions/npm-debug.log*
+functions/yarn-debug.log*
+functions/yarn-error.log*
+functions/package-lock.json.tmp
+
+# Functions env files
+functions/.env
+functions/.env.*
+!functions/.env.example
+
+# Keep this committed:
+# functions/package.json
+# functions/package-lock.json
+# functions/tsconfig.json
+# functions/src/
+
+# -------------------------
+# Env / secrets
+# -------------------------
+.env
+.env.*
+!.env.example
+
+# -------------------------
+# VS Code
+# -------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+
+# -------------------------
+# OS junk
+# -------------------------
+.DS_Store
+Thumbs.db
+
+# Firebase Related
+google-services.json
+lib/firebase_options.dart
+
+#Agent Related
+skills-lock.json
+.agents/*
