@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
+import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({
-    super.key,
-    required this.repository,
-  });
+  const SignupScreen({super.key, required this.repository});
 
   final AuthRepo repository;
 
@@ -13,7 +11,8 @@ class SignupScreen extends StatefulWidget {
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends State<SignupScreen>
+    with WidgetsBindingObserver {
   final _displayNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -21,11 +20,26 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+
     _displayNameController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isLoading) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _signUpWithGoogle() async {
@@ -33,10 +47,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       await widget.repository.signInWithGoogle();
-
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
     } catch (error) {
       _showMessage('Google sign-up failed: $error');
     } finally {
@@ -47,23 +57,30 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void _showUsernameSignupComingSoon() {
-    _showMessage('Username signup will be connected with Cloud Functions later.');
+    _showMessage(
+      'Username signup will be connected with Cloud Functions later.',
+    );
+  }
+
+  void _openLoginScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LoginScreen(repository: widget.repository),
+      ),
+    );
   }
 
   void _showMessage(String message) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -84,8 +101,8 @@ class _SignupScreenState extends State<SignupScreen> {
                     'Create your account',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
 
@@ -128,8 +145,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   const SizedBox(height: 20),
 
                   FilledButton(
-                    onPressed:
-                        _isLoading ? null : _showUsernameSignupComingSoon,
+                    onPressed: _isLoading
+                        ? null
+                        : _showUsernameSignupComingSoon,
                     child: const Text('Sign up'),
                   ),
                   const SizedBox(height: 12),
@@ -138,6 +156,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     onPressed: _isLoading ? null : _signUpWithGoogle,
                     icon: const Icon(Icons.login_rounded),
                     label: const Text('Continue with Google'),
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: _isLoading ? null : _openLoginScreen,
+                    child: const Text('Create a new account'),
                   ),
 
                   if (_isLoading) ...[
