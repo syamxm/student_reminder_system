@@ -4,11 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthRepo {
-  AuthRepo({
-    FirebaseAuth? firebaseAuth,
-    FirebaseFirestore? firestore,
-  })  : _auth = firebaseAuth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+  AuthRepo({FirebaseAuth? firebaseAuth, FirebaseFirestore? firestore})
+    : _auth = firebaseAuth ?? FirebaseAuth.instance,
+      _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
@@ -38,9 +36,7 @@ class AuthRepo {
         );
       }
 
-      final googleCredential = GoogleAuthProvider.credential(
-        idToken: idToken,
-      );
+      final googleCredential = GoogleAuthProvider.credential(idToken: idToken);
 
       credential = await _auth.signInWithCredential(googleCredential);
     }
