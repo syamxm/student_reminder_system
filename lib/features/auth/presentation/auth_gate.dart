@@ -7,7 +7,7 @@ import 'login_screen.dart';
 
 class AuthGate extends StatelessWidget {
   AuthGate({super.key, AuthRepo? repository})
-      : _repository = repository ?? AuthRepo();
+    : _repository = repository ?? AuthRepo();
 
   final AuthRepo _repository;
 
@@ -26,10 +26,7 @@ class AuthGate extends StatelessWidget {
           return LoginScreen(repository: _repository);
         }
 
-        return DashboardScreen(
-          user: user,
-          repository: _repository,
-        );
+        return DashboardScreen(user: user, repository: _repository);
       },
     );
   }
@@ -40,10 +37,6 @@ class _LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
