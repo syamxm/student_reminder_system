@@ -11,8 +11,12 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Add this
   if (!kIsWeb) {
-    await GoogleSignIn.instance.initialize();
+    await GoogleSignIn.instance.initialize(
+      serverClientId:
+          '958691525428-ic7ht1ntcn24b3qf8ome5ld3l021b7t4.apps.googleusercontent.com',
+    );
   }
 
   runApp(const StudentReminderApp());
