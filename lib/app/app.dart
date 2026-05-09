@@ -18,9 +18,7 @@ class StudentReminderApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFFF7F7FB),
         inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
