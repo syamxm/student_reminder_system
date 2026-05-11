@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
+import '../../reminders/presentation/reminder_list.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({
@@ -53,6 +54,7 @@ class DashboardScreen extends StatelessWidget {
                   value: 'Coming soon',
                   description: 'Assignments, homework, and study reminders.',
                 ),
+
                 const SizedBox(height: 12),
 
                 _DashboardInfoCard(
@@ -61,6 +63,17 @@ class DashboardScreen extends StatelessWidget {
                   value: 'Coming soon',
                   description: 'Weekly class schedule and study sessions.',
                 ),
+                Text(
+                  'My Reminders',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 12),
+
+                const SizedBox(height: 150, child: ReminderList()),
+
                 const SizedBox(height: 12),
 
                 _DashboardInfoCard(
