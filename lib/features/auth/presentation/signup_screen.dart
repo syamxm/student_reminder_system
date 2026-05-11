@@ -63,7 +63,7 @@ class _SignupScreenState extends State<SignupScreen>
   }
 
   void _openLoginScreen() {
-    Navigator.of(context).push(
+    Navigator.of(context).pop(
       MaterialPageRoute(
         builder: (_) => LoginScreen(repository: widget.repository),
       ),

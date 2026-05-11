@@ -9,12 +9,13 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   if (!kIsWeb) {
-    await GoogleSignIn.instance.initialize();
+    await GoogleSignIn.instance.initialize(
+      serverClientId:
+          '958691525428-ic7ht1ntcn24b3qf8ome5ld3l021b7t4.apps.googleusercontent.com',
+    );
   }
 
   runApp(const StudentReminderApp());

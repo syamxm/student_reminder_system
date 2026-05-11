@@ -4,11 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthRepo {
-  AuthRepo({
-    FirebaseAuth? firebaseAuth,
-    FirebaseFirestore? firestore,
-  })  : _auth = firebaseAuth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+  AuthRepo({FirebaseAuth? firebaseAuth, FirebaseFirestore? firestore})
+    : _auth = firebaseAuth ?? FirebaseAuth.instance,
+      _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
@@ -19,30 +17,37 @@ class AuthRepo {
 
   User? get currentUser => _auth.currentUser;
 
-  Future<UserCredential> signInWithGoogle() async {
+  Future<UserCredential?> signInWithGoogle() async {
     final UserCredential credential;
 
     if (kIsWeb) {
       final googleProvider = GoogleAuthProvider();
       credential = await _auth.signInWithPopup(googleProvider);
     } else {
-      final googleUser = await GoogleSignIn.instance.authenticate();
-      final googleAuth = googleUser.authentication;
+      try {
+        final googleUser = await GoogleSignIn.instance.authenticate();
+        final googleAuth = googleUser.authentication;
 
-      final idToken = googleAuth.idToken;
+        final idToken = googleAuth.idToken;
 
-      if (idToken == null) {
-        throw FirebaseAuthException(
-          code: 'missing-google-id-token',
-          message: 'Google sign-in failed because no ID token was returned.',
+        if (idToken == null) {
+          throw FirebaseAuthException(
+            code: 'missing-google-id-token',
+            message: 'Google sign-in failed because no ID token was returned.',
+          );
+        }
+
+        final googleCredential = GoogleAuthProvider.credential(
+          idToken: idToken,
         );
+
+        credential = await _auth.signInWithCredential(googleCredential);
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled) {
+          return null;
+        }
+        rethrow;
       }
-
-      final googleCredential = GoogleAuthProvider.credential(
-        idToken: idToken,
-      );
-
-      credential = await _auth.signInWithCredential(googleCredential);
     }
 
     await _createOrUpdateUserProfile(

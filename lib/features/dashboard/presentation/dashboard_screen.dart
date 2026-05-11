@@ -19,7 +19,6 @@ class DashboardScreen extends StatelessWidget {
         .collection('users')
         .doc(user.uid)
         .snapshots();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
