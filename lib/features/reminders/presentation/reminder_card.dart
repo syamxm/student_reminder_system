@@ -6,11 +6,13 @@ class ReminderCard extends StatelessWidget {
   const ReminderCard({
     super.key,
     required this.reminder,
+    required this.onTap,
     required this.onCompletionChanged,
     required this.onDeletePressed,
   });
 
   final ReminderModel reminder;
+  final VoidCallback onTap;
   final ValueChanged<bool> onCompletionChanged;
   final VoidCallback onDeletePressed;
 
@@ -20,63 +22,67 @@ class ReminderCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Checkbox(
-              value: reminder.isCompleted,
-              onChanged: (value) {
-                if (value == null) return;
-                onCompletionChanged(value);
-              },
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    reminder.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      decoration: reminder.isCompleted
-                          ? TextDecoration.lineThrough
-                          : null,
-                    ),
-                  ),
-                  if (reminder.description.trim().isNotEmpty) ...[
-                    const SizedBox(height: 6),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Checkbox(
+                value: reminder.isCompleted,
+                onChanged: (value) {
+                  if (value == null) return;
+                  onCompletionChanged(value);
+                },
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      reminder.description,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _InfoChip(
-                        icon: Icons.schedule,
-                        label: _formatDateTime(reminder.dueAt),
+                      reminder.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        decoration: reminder.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
-                      _InfoChip(
-                        icon: Icons.flag,
-                        label: _priorityLabel(reminder.priority),
+                    ),
+                    if (reminder.description.trim().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        reminder.description,
+                        style: theme.textTheme.bodyMedium,
                       ),
                     ],
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _InfoChip(
+                          icon: Icons.schedule,
+                          label: _formatDateTime(reminder.dueAt),
+                        ),
+                        _InfoChip(
+                          icon: Icons.flag,
+                          label: _priorityLabel(reminder.priority),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              tooltip: 'Delete reminder',
-              onPressed: onDeletePressed,
-              icon: const Icon(Icons.delete_outline),
-            ),
-          ],
+              IconButton(
+                tooltip: 'Delete reminder',
+                onPressed: onDeletePressed,
+                icon: const Icon(Icons.delete_outline),
+              ),
+            ],
+          ),
         ),
       ),
     );
