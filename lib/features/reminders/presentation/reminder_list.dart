@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/reminder_model.dart';
 import '../data/reminder_repo.dart';
 import 'reminder_card.dart';
+import 'edit_reminder_screen.dart';
 
 class ReminderList extends StatefulWidget {
   const ReminderList({super.key});
@@ -45,6 +46,13 @@ class _ReminderListState extends State<ReminderList> {
 
             return ReminderCard(
               reminder: reminder,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EditReminderScreen(reminder: reminder),
+                  ),
+                );
+              },
               onCompletionChanged: (isCompleted) async {
                 await _setCompletion(
                   reminderId: reminder.id,
