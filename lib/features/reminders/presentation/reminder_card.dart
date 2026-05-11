@@ -23,96 +23,170 @@ class ReminderCard extends StatelessWidget {
     final priorityColor = _priorityColor(context, reminder.priority);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
+        child: IntrinsicHeight(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Checkbox(
-                value: reminder.isCompleted,
-                onChanged: (value) {
-                  if (value == null) return;
-                  onCompletionChanged(value);
-                },
-              ),
-              const SizedBox(width: 8),
+              // Priority accent bar
+              Container(width: 4, color: priorityColor),
 
+              // Card body
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      reminder.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        decoration: reminder.isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Checkbox
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: Checkbox(
+                          value: reminder.isCompleted,
+                          visualDensity: VisualDensity.compact,
+                          onChanged: (value) {
+                            if (value == null) return;
+                            onCompletionChanged(value);
+                          },
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 10),
 
-                    if (reminder.description.trim().isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        reminder.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
+                      // Content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Title + priority badge
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    reminder.title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      decoration: reminder.isCompleted
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                      color: reminder.isCompleted
+                                          ? theme.colorScheme.onSurfaceVariant
+                                          : null,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _PriorityBadge(
+                                  label: _priorityLabel(reminder.priority),
+                                  color: priorityColor,
+                                ),
+                              ],
+                            ),
+
+                            // Description
+                            if (reminder.description.trim().isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                reminder.description,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 10),
+
+                            // Bottom row: datetime + status
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.schedule_rounded,
+                                  size: 13,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatDateTime(reminder.dueAt),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                                const Spacer(),
+                                _StatusChip(status: status),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // 3-dot menu
+                      PopupMenuButton<_CardAction>(
+                        icon: Icon(
+                          Icons.more_vert_rounded,
+                          size: 18,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
+                        onSelected: (action) {
+                          switch (action) {
+                            case _CardAction.edit:
+                              onTap();
+                            case _CardAction.delete:
+                              onDeletePressed();
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: _CardAction.edit,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 18,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 12),
+                                const Text('Edit'),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: _CardAction.delete,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                  color: theme.colorScheme.error,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-
-                    const SizedBox(height: 12),
-
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _InfoChip(
-                          icon: Icons.schedule_rounded,
-                          label: _formatDateTime(reminder.dueAt),
-                        ),
-                        _ColoredChip(
-                          icon: Icons.flag_rounded,
-                          label: _priorityLabel(reminder.priority),
-                          color: priorityColor,
-                        ),
-                        _ColoredChip(
-                          icon: status.icon,
-                          label: status.label,
-                          color: status.color,
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-
-              Column(
-                children: [
-                  IconButton(
-                    tooltip: 'Edit reminder',
-                    onPressed: onTap,
-                    icon: const Icon(Icons.edit_outlined),
-                  ),
-                  IconButton(
-                    tooltip: 'Delete reminder',
-                    onPressed: onDeletePressed,
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                ],
               ),
             ],
           ),
@@ -120,6 +194,8 @@ class ReminderCard extends StatelessWidget {
       ),
     );
   }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   static String _priorityLabel(ReminderPriority priority) {
     switch (priority) {
@@ -133,15 +209,14 @@ class ReminderCard extends StatelessWidget {
   }
 
   static Color _priorityColor(BuildContext context, ReminderPriority priority) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+    final cs = Theme.of(context).colorScheme;
     switch (priority) {
       case ReminderPriority.high:
-        return colorScheme.error;
+        return cs.error;
       case ReminderPriority.medium:
-        return colorScheme.tertiary;
+        return cs.tertiary;
       case ReminderPriority.low:
-        return colorScheme.primary;
+        return cs.primary;
     }
   }
 
@@ -181,53 +256,75 @@ class ReminderCard extends StatelessWidget {
     );
   }
 
-  static String _formatDateTime(DateTime dateTime) {
-    final year = dateTime.year.toString();
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-
-    return '$year-$month-$day $hour:$minute';
+  static String _formatDateTime(DateTime dt) {
+    final y = dt.year.toString();
+    final mo = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    final h = dt.hour.toString().padLeft(2, '0');
+    final mi = dt.minute.toString().padLeft(2, '0');
+    return '$y-$mo-$d $h:$mi';
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.icon, required this.label});
+// ── Sub-widgets ─────────────────────────────────────────────────────────────
 
-  final IconData icon;
-  final String label;
+enum _CardAction { edit, delete }
 
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      avatar: Icon(icon, size: 16),
-      label: Text(label),
-      visualDensity: VisualDensity.compact,
-    );
-  }
-}
+class _PriorityBadge extends StatelessWidget {
+  const _PriorityBadge({required this.label, required this.color});
 
-class _ColoredChip extends StatelessWidget {
-  const _ColoredChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
   final String label;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      avatar: Icon(icon, size: 16, color: color),
-      label: Text(label),
-      visualDensity: VisualDensity.compact,
-      side: BorderSide(color: color.withValues(alpha: 0.35)),
-      backgroundColor: color.withValues(alpha: 0.10),
-      labelStyle: TextStyle(color: color, fontWeight: FontWeight.w700),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+
+  final _DueStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: status.color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(status.icon, size: 12, color: status.color),
+          const SizedBox(width: 4),
+          Text(
+            status.label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: status.color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

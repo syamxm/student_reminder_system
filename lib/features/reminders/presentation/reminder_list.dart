@@ -46,6 +46,7 @@ class _ReminderListState extends State<ReminderList> {
             : reminders.take(widget.limit!).toList();
 
         return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           itemCount: visibleReminders.length,
           itemBuilder: (context, index) {
             final reminder = visibleReminders[index];
@@ -102,15 +103,11 @@ class _ReminderListState extends State<ReminderList> {
           content: Text('This will delete "${reminder.title}".'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
+              onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
+              onPressed: () => Navigator.of(context).pop(true),
               child: const Text('Delete'),
             ),
           ],
