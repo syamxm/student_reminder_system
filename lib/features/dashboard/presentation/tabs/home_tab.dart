@@ -66,7 +66,7 @@ class HomeTab extends StatelessWidget {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            const SizedBox(height: 300, child: ReminderList()),
+            const SizedBox(height: 300, child: ReminderList(limit: 3)),
           ],
         );
       },

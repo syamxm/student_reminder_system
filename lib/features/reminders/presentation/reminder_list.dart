@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../data/reminder_model.dart';
 import '../data/reminder_repo.dart';
-import 'reminder_card.dart';
 import 'edit_reminder_screen.dart';
+import 'reminder_card.dart';
 
 class ReminderList extends StatefulWidget {
-  const ReminderList({super.key});
+  const ReminderList({super.key, this.limit});
+
+  final int? limit;
 
   @override
   State<ReminderList> createState() => _ReminderListState();
@@ -39,10 +41,14 @@ class _ReminderListState extends State<ReminderList> {
           return const _EmptyReminderState();
         }
 
+        final visibleReminders = widget.limit == null
+            ? reminders
+            : reminders.take(widget.limit!).toList();
+
         return ListView.builder(
-          itemCount: reminders.length,
+          itemCount: visibleReminders.length,
           itemBuilder: (context, index) {
-            final reminder = reminders[index];
+            final reminder = visibleReminders[index];
 
             return ReminderCard(
               reminder: reminder,
@@ -79,11 +85,11 @@ class _ReminderListState extends State<ReminderList> {
         isCompleted: isCompleted,
       );
     } catch (error) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update reminder: $error')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update reminder: $error')),
+        );
+      }
     }
   }
 
@@ -96,11 +102,15 @@ class _ReminderListState extends State<ReminderList> {
           content: Text('This will delete "${reminder.title}".'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
               child: const Text('Delete'),
             ),
           ],
@@ -113,11 +123,11 @@ class _ReminderListState extends State<ReminderList> {
     try {
       await _reminderRepo.deleteReminder(reminder.id);
     } catch (error) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete reminder: $error')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete reminder: $error')),
+        );
+      }
     }
   }
 }
@@ -127,12 +137,35 @@ class _EmptyReminderState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final theme = Theme.of(context);
+
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text(
-          'No reminders yet.\nAdd one soon.',
-          textAlign: TextAlign.center,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.task_alt_rounded,
+              size: 54,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'No reminders yet',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Add your first assignment, study plan, or deadline.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ),
     );
