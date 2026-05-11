@@ -11,7 +11,6 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Add this
   if (!kIsWeb) {
     await GoogleSignIn.instance.initialize(
       serverClientId:
