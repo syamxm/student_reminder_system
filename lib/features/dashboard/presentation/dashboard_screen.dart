@@ -5,6 +5,7 @@ import 'package:student_reminder_system/features/dashboard/presentation/tabs/hom
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/profile_tab.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/reminders_tab.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/timetable_tab.dart';
+import 'package:student_reminder_system/features/reminders/presentation/add_reminder_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
@@ -51,6 +52,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: SafeArea(
         child: IndexedStack(index: _selectedIndex, children: pages),
       ),
+      floatingActionButton: _selectedIndex == 1
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AddReminderScreen()),
+                );
+              },
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add'),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
