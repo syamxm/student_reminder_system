@@ -6,6 +6,7 @@ import 'package:student_reminder_system/features/dashboard/presentation/tabs/pro
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/reminders_tab.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/timetable_tab.dart';
 import 'package:student_reminder_system/features/reminders/presentation/add_reminder_screen.dart';
+import '../../../core/notifications/notification_tap_router.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
@@ -23,6 +24,15 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationTapRouter.openPendingIfPossible();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
