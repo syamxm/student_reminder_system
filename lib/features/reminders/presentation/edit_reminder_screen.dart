@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/reminder_model.dart';
 import '../data/reminder_repo.dart';
+import 'package:student_reminder_system/core/notifications/notification_service.dart';
 
 class EditReminderScreen extends StatefulWidget {
   const EditReminderScreen({super.key, required this.reminder});
@@ -253,6 +254,19 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
 
     try {
       await _reminderRepo.updateReminder(updatedReminder);
+
+      if (_isCompleted) {
+        await NotificationService.instance.cancelReminderNotification(
+          widget.reminder.id,
+        );
+      } else {
+        await NotificationService.instance.scheduleReminderNotification(
+          reminderId: widget.reminder.id,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          dueAt: _dueAt,
+        );
+      }
 
       if (!mounted) return;
 

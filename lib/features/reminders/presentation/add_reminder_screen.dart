@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/reminder_model.dart';
 import '../data/reminder_repo.dart';
+import 'package:student_reminder_system/core/notifications/notification_service.dart';
 
 class AddReminderScreen extends StatefulWidget {
   const AddReminderScreen({super.key});
@@ -201,34 +202,34 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
   Future<void> _saveReminder() async {
     final isValid = _formKey.currentState?.validate() ?? false;
-
     if (!isValid) return;
 
-    setState(() {
-      _isSaving = true;
-    });
+    setState(() => _isSaving = true);
 
     try {
-      await _reminderRepo.addReminder(
-        title: _titleController.text,
-        description: _descriptionController.text,
+      final reminderId = await _reminderRepo.addReminder(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
         dueAt: _dueAt,
-        priority: _selectedPriority,
+        priority: _selectedPriority.toString(),
+      );
+
+      await NotificationService.instance.scheduleReminderNotification(
+        reminderId: reminderId,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        dueAt: _dueAt,
       );
 
       if (!mounted) return;
-
       Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save reminder: $error')),
       );
     } finally {
-      setState(() {
-        _isSaving = false;
-      });
+      setState(() => _isSaving = false);
     }
   }
 
