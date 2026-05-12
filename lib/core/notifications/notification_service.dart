@@ -6,6 +6,10 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
+int _notificationIdFromReminderId(String reminderId) {
+  return reminderId.hashCode & 0x7fffffff;
+}
+
 class NotificationService {
   NotificationService._();
 
@@ -87,6 +91,78 @@ class NotificationService {
     final granted = await androidPlugin?.requestNotificationsPermission();
 
     return granted ?? true;
+  }
+
+  static const String _reminderChannelId = 'reminder_due_channel';
+  static const String _reminderChannelName = 'Reminder Due';
+  static const String _reminderChannelDescription =
+      'Notifications for scheduled student reminders.';
+
+  NotificationDetails _reminderNotificationDetails() {
+    return const NotificationDetails(
+      android: AndroidNotificationDetails(
+        _reminderChannelId,
+        _reminderChannelName,
+        channelDescription: _reminderChannelDescription,
+        importance: Importance.max,
+        priority: Priority.high,
+      ),
+    );
+  }
+
+  Future<void> cancelReminderNotification(String reminderId) async {
+    await init();
+
+    final notificationId = _notificationIdFromReminderId(reminderId);
+    await _notifications.cancel(id: notificationId);
+
+    log('Cancelled reminder notification: id=$notificationId');
+  }
+
+  Future<void> logPendingNotifications() async {
+    await init();
+
+    final pending = await _notifications.pendingNotificationRequests();
+
+    log('Pending notifications count: ${pending.length}');
+
+    for (final item in pending) {
+      log(
+        'Pending notification: id=${item.id}, title=${item.title}, body=${item.body}',
+      );
+    }
+  }
+
+  Future<void> scheduleReminderNotification({
+    required String reminderId,
+    required String title,
+    String? description,
+    required DateTime dueAt,
+  }) async {
+    await init();
+    await requestPermission();
+
+    if (dueAt.isBefore(DateTime.now())) {
+      await cancelReminderNotification(reminderId);
+      log('Skipped scheduling past reminder: $reminderId');
+      return;
+    }
+
+    final scheduledDate = tz.TZDateTime.from(dueAt, tz.local);
+    final notificationId = _notificationIdFromReminderId(reminderId);
+
+    await _notifications.zonedSchedule(
+      id: notificationId,
+      title: 'Reminder: $title',
+      scheduledDate: scheduledDate,
+      notificationDetails: _reminderNotificationDetails(),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: reminderId,
+    );
+
+    log(
+      'Scheduled reminder notification: id=$notificationId dueAt=$scheduledDate',
+    );
   }
 
   NotificationDetails _debugNotificationDetails() {

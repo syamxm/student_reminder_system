@@ -41,29 +41,35 @@ class ReminderRepo {
     });
   }
 
-  Future<void> addReminder({
+  Future<String> addReminder({
     required String title,
     required String description,
     required DateTime dueAt,
-    required ReminderPriority priority,
+    required String priority,
   }) async {
-    final trimmedTitle = title.trim();
-    final trimmedDescription = description.trim();
+    final uid = _firebaseAuth.currentUser?.uid;
 
-    if (trimmedTitle.isEmpty) {
-      throw ArgumentError('Reminder title cannot be empty.');
+    if (uid == null) {
+      throw Exception('User is not signed in.');
     }
 
-    final reminder = ReminderModel(
-      id: '',
-      title: trimmedTitle,
-      description: trimmedDescription,
-      dueAt: dueAt,
-      priority: priority,
-      isCompleted: false,
-    );
+    final docRef = _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('reminders')
+        .doc();
 
-    await _remindersRef.add(reminder.toCreateMap());
+    await docRef.set({
+      'title': title,
+      'description': description,
+      'dueAt': Timestamp.fromDate(dueAt),
+      'priority': priority,
+      'isCompleted': false,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    return docRef.id;
   }
 
   Future<void> updateReminder(ReminderModel reminder) async {

@@ -4,6 +4,7 @@ import '../data/reminder_model.dart';
 import '../data/reminder_repo.dart';
 import 'edit_reminder_screen.dart';
 import 'reminder_card.dart';
+import 'package:student_reminder_system/core/notifications/notification_service.dart';
 
 class ReminderList extends StatefulWidget {
   const ReminderList({super.key, this.limit});
@@ -85,6 +86,7 @@ class _ReminderListState extends State<ReminderList> {
         reminderId: reminderId,
         isCompleted: isCompleted,
       );
+      await NotificationService.instance.cancelReminderNotification(reminderId);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -119,6 +121,9 @@ class _ReminderListState extends State<ReminderList> {
 
     try {
       await _reminderRepo.deleteReminder(reminder.id);
+      await NotificationService.instance.cancelReminderNotification(
+        reminder.id,
+      );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
