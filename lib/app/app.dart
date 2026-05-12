@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../features/auth/presentation/auth_gate.dart';
+import '../features/reminders/presentation/reminder_tap_screen.dart';
+import 'app_navigator.dart';
 
 class StudentReminderApp extends StatelessWidget {
   const StudentReminderApp({super.key});
@@ -10,6 +12,19 @@ class StudentReminderApp extends StatelessWidget {
     return MaterialApp(
       title: 'Student Reminder System',
       debugShowCheckedModeBanner: false,
+      navigatorKey: appNavigatorKey,
+      home: AuthGate(),
+      onGenerateRoute: (settings) {
+        if (settings.name == ReminderTapScreen.routeName) {
+          final reminderId = settings.arguments as String?;
+
+          return MaterialPageRoute(
+            builder: (_) => ReminderTapScreen(reminderId: reminderId ?? ''),
+            settings: settings,
+          );
+        }
+        return null;
+      },
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -37,7 +52,6 @@ class StudentReminderApp extends StatelessWidget {
           ),
         ),
       ),
-      home: AuthGate(),
     );
   }
 }

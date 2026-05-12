@@ -5,9 +5,17 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+import 'notification_payload.dart';
+import 'notification_tap_router.dart';
 
 int _notificationIdFromReminderId(String reminderId) {
   return reminderId.hashCode & 0x7fffffff;
+}
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) {
+  // Do not navigate here.
+  // Background callback may run outside normal UI isolate.
 }
 
 class NotificationService {
@@ -41,10 +49,16 @@ class NotificationService {
 
     await _notifications.initialize(
       settings: initializationSettings,
-      onDidReceiveNotificationResponse: (response) {
-        log('Notification tapped. payload=${response.payload}');
-      },
+      onDidReceiveNotificationResponse: NotificationTapRouter.handleResponse,
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
+
+    final launchDetails = await _notifications
+        .getNotificationAppLaunchDetails();
+
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      NotificationTapRouter.handleResponse(launchDetails?.notificationResponse);
+    }
 
     await requestPermission();
 
@@ -152,12 +166,12 @@ class NotificationService {
     final notificationId = _notificationIdFromReminderId(reminderId);
 
     await _notifications.zonedSchedule(
-      id: notificationId,
+      id: _notificationIdFromReminderId(reminderId),
       title: 'Reminder: $title',
       scheduledDate: scheduledDate,
       notificationDetails: _reminderNotificationDetails(),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      payload: reminderId,
+      payload: NotificationPayload.reminder(reminderId: reminderId),
     );
 
     log(
