@@ -12,11 +12,9 @@ int _notificationIdFromReminderId(String reminderId) {
   return reminderId.hashCode & 0x7fffffff;
 }
 
-int _earlyReminderNotificationId(String reminderId, int minutesOffset) {
-  return '${reminderId}_early_$minutesOffset'.hashCode & 0x7fffffff;
+int _earlyReminderNotificationId(String reminderId, int daysOffset) {
+  return '${reminderId}_early_${daysOffset}d'.hashCode & 0x7fffffff;
 }
-
-const List<int> _earlyReminderMinuteOffsets = [14 * 24 * 60, 7 * 24 * 60, 3 * 24 * 60, 24 * 60];
 
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse response) {
@@ -139,33 +137,40 @@ class NotificationService {
     log('Cancelled reminder notification: id=$notificationId');
   }
 
-  Future<void> cancelEarlyReminderNotifications(String reminderId) async {
+  Future<void> cancelEarlyReminderNotifications(
+    String reminderId,
+    List<int> dayOffsets,
+  ) async {
     await init();
 
-    for (final minutes in _earlyReminderMinuteOffsets) {
+    for (final days in dayOffsets) {
       await _notifications.cancel(
-        id: _earlyReminderNotificationId(reminderId, minutes),
+        id: _earlyReminderNotificationId(reminderId, days),
       );
     }
 
-    log('Cancelled early reminder notifications for: $reminderId');
+    log('Cancelled early reminder notifications for: $reminderId offsets=$dayOffsets');
   }
 
-  Future<void> cancelAllReminderNotifications(String reminderId) async {
+  Future<void> cancelAllReminderNotifications(
+    String reminderId,
+    List<int> earlyDayOffsets,
+  ) async {
     await cancelReminderNotification(reminderId);
-    await cancelEarlyReminderNotifications(reminderId);
+    await cancelEarlyReminderNotifications(reminderId, earlyDayOffsets);
   }
 
   Future<void> scheduleEarlyReminders({
     required String reminderId,
     required String title,
     required DateTime dueAt,
+    required List<int> dayOffsets,
   }) async {
     await init();
 
-    for (final minutes in _earlyReminderMinuteOffsets) {
-      final notifyAt = dueAt.subtract(Duration(minutes: minutes));
-      final notificationId = _earlyReminderNotificationId(reminderId, minutes);
+    for (final days in dayOffsets) {
+      final notifyAt = dueAt.subtract(Duration(days: days));
+      final notificationId = _earlyReminderNotificationId(reminderId, days);
 
       if (notifyAt.isBefore(DateTime.now())) {
         await _notifications.cancel(id: notificationId);
@@ -173,7 +178,7 @@ class NotificationService {
       }
 
       final scheduledDate = tz.TZDateTime.from(notifyAt, tz.local);
-      final label = _earlyReminderLabel(minutes);
+      final label = days == 1 ? 'Due tomorrow' : 'Due in $days days';
 
       await _notifications.zonedSchedule(
         id: notificationId,
@@ -185,15 +190,8 @@ class NotificationService {
         payload: NotificationPayload.reminder(reminderId: reminderId),
       );
 
-      log('Scheduled early reminder: id=$notificationId offset=${minutes}min at=$scheduledDate');
+      log('Scheduled early reminder: id=$notificationId offset=${days}d at=$scheduledDate');
     }
-  }
-
-  String _earlyReminderLabel(int minutesOffset) {
-    final days = minutesOffset ~/ (24 * 60);
-    if (days == 1) return 'Due tomorrow';
-    if (days > 1) return 'Due in $days days';
-    return 'Due in $minutesOffset minutes';
   }
 
   Future<void> logPendingNotifications() async {
