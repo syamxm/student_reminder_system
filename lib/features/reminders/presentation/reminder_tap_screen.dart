@@ -42,13 +42,27 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
 
   Future<void> _toggleCompletion(ReminderModel reminder) async {
     try {
-      await _reminderRepo.setReminderCompletion(
-        reminderId: reminder.id,
-        isCompleted: !reminder.isCompleted,
-      );
-      await NotificationService.instance.cancelReminderNotification(
-        reminder.id,
-      );
+      final markingComplete = !reminder.isCompleted;
+
+      if (markingComplete && reminder.recurrence != ReminderRecurrence.none) {
+        await _reminderRepo.advanceRecurringReminder(reminder);
+        final nextDue = reminder.recurrence.nextDueDate(reminder.dueAt)!;
+        await NotificationService.instance.scheduleReminderNotification(
+          reminderId: reminder.id,
+          title: reminder.title,
+          description: reminder.description,
+          dueAt: nextDue,
+        );
+      } else {
+        await _reminderRepo.setReminderCompletion(
+          reminderId: reminder.id,
+          isCompleted: markingComplete,
+        );
+        await NotificationService.instance.cancelReminderNotification(
+          reminder.id,
+        );
+      }
+
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       if (mounted) {
