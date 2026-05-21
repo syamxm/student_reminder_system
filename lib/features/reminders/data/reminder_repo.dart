@@ -46,6 +46,7 @@ class ReminderRepo {
     required String description,
     required DateTime dueAt,
     required String priority,
+    ReminderRecurrence recurrence = ReminderRecurrence.none,
   }) async {
     final uid = _firebaseAuth.currentUser?.uid;
 
@@ -65,6 +66,7 @@ class ReminderRepo {
       'dueAt': Timestamp.fromDate(dueAt),
       'priority': priority,
       'isCompleted': false,
+      'recurrence': recurrence.value,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
