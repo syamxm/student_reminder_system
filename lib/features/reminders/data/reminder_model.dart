@@ -66,7 +66,13 @@ extension ReminderRecurrenceX on ReminderRecurrence {
       case ReminderRecurrence.weekly:
         return from.add(const Duration(days: 7));
       case ReminderRecurrence.monthly:
-        return DateTime(from.year, from.month + 1, from.day, from.hour, from.minute);
+        return DateTime(
+          from.year,
+          from.month + 1,
+          from.day,
+          from.hour,
+          from.minute,
+        );
     }
   }
 }

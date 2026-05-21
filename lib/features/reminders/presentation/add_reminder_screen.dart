@@ -235,7 +235,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         dueAt: _dueAt,
-        priority: _selectedPriority.toString(),
+        priority: _selectedPriority.value,
         recurrence: _selectedRecurrence,
       );
 
