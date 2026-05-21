@@ -22,7 +22,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   TimeOfDay _selectedTime = TimeOfDay.now();
   ReminderPriority _selectedPriority = ReminderPriority.medium;
   ReminderRecurrence _selectedRecurrence = ReminderRecurrence.none;
-  bool _earlyRemindersEnabled = false;
+  List<int> _selectedReminderDays = const [];
 
   bool _isSaving = false;
 
@@ -152,20 +152,35 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
                   const SizedBox(height: 14),
 
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Early reminders'),
-                    subtitle: const Text(
-                      'Notify 14 days, 7 days, 3 days, and 1 day before.',
-                    ),
-                    value: _earlyRemindersEnabled,
-                    onChanged: _isSaving
-                        ? null
-                        : (value) {
-                            setState(() {
-                              _earlyRemindersEnabled = value;
-                            });
-                          },
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Early reminders'),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [1, 3, 7, 14].map((days) {
+                          return FilterChip(
+                            label: Text(
+                              days == 1 ? '1 day before' : '$days days before',
+                            ),
+                            selected: _selectedReminderDays.contains(days),
+                            onSelected: _isSaving
+                                ? null
+                                : (selected) {
+                                    setState(() {
+                                      _selectedReminderDays = selected
+                                          ? [..._selectedReminderDays, days]
+                                          : _selectedReminderDays
+                                              .where((d) => d != days)
+                                              .toList();
+                                    });
+                                  },
+                          );
+                        }).toList(),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 14),
@@ -256,7 +271,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         dueAt: _dueAt,
         priority: _selectedPriority.value,
         recurrence: _selectedRecurrence,
-        earlyRemindersEnabled: _earlyRemindersEnabled,
+        reminderDaysBefore: _selectedReminderDays,
       );
 
       await NotificationService.instance.scheduleReminderNotification(
@@ -266,11 +281,12 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         dueAt: _dueAt,
       );
 
-      if (_earlyRemindersEnabled) {
+      if (_selectedReminderDays.isNotEmpty) {
         await NotificationService.instance.scheduleEarlyReminders(
           reminderId: reminderId,
           title: _titleController.text.trim(),
           dueAt: _dueAt,
+          dayOffsets: _selectedReminderDays,
         );
       }
 

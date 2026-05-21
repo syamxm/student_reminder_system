@@ -53,11 +53,12 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
           description: reminder.description,
           dueAt: nextDue,
         );
-        if (reminder.earlyRemindersEnabled) {
+        if (reminder.reminderDaysBefore.isNotEmpty) {
           await NotificationService.instance.scheduleEarlyReminders(
             reminderId: reminder.id,
             title: reminder.title,
             dueAt: nextDue,
+            dayOffsets: reminder.reminderDaysBefore,
           );
         }
       } else {
@@ -67,6 +68,7 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
         );
         await NotificationService.instance.cancelAllReminderNotifications(
           reminder.id,
+          reminder.reminderDaysBefore,
         );
       }
 
@@ -105,6 +107,7 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
       await _reminderRepo.deleteReminder(reminder.id);
       await NotificationService.instance.cancelAllReminderNotifications(
         reminder.id,
+        reminder.reminderDaysBefore,
       );
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
