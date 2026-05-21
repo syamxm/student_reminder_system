@@ -173,8 +173,8 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                                       _selectedReminderDays = selected
                                           ? [..._selectedReminderDays, days]
                                           : _selectedReminderDays
-                                              .where((d) => d != days)
-                                              .toList();
+                                                .where((d) => d != days)
+                                                .toList();
                                     });
                                   },
                           );
