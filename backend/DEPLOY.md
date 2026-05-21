@@ -22,8 +22,8 @@ No nginx required. Cloudflare Tunnel handles SSL and routing directly.
 ## Step 1 — System dependencies (on Debian)
 
 ```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv git
+doas apt update
+doas apt install python3 python3-pip python3-venv git
 ```
 
 ---
@@ -39,7 +39,7 @@ To update later:
 ```bash
 cd /opt/student-reminder-backend
 git pull
-sudo systemctl restart student-reminder
+doas systemctl restart student-reminder
 ```
 
 ---
@@ -91,10 +91,10 @@ ALLOWED_ORIGINS=https://api.yourdomain.com
 ## Step 6 — systemd service
 
 ```bash
-sudo cp /opt/student-reminder-backend/backend/student-reminder.service /etc/systemd/system/
+doas cp /opt/student-reminder-backend/backend/student-reminder.service /etc/systemd/system/
 
 # Edit WorkingDirectory and ExecStart paths if needed
-sudo nano /etc/systemd/system/student-reminder.service
+doas nano /etc/systemd/system/student-reminder.service
 ```
 
 Make sure these lines match your actual paths:
@@ -105,10 +105,10 @@ ExecStart=/opt/student-reminder-backend/backend/venv/bin/uvicorn main:app --host
 ```
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable student-reminder
-sudo systemctl start student-reminder
-sudo systemctl status student-reminder
+doas systemctl daemon-reload
+doas systemctl enable student-reminder
+doas systemctl start student-reminder
+doas systemctl status student-reminder
 ```
 
 Check it is running on port 8000:
@@ -124,9 +124,9 @@ curl http://localhost:8000/health
 ### Install cloudflared
 
 ```bash
-curl -L https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-archive-keyring.gpg >/dev/null
-echo "deb [signed-by=/usr/share/keyrings/cloudflare-archive-keyring.gpg] https://pkg.cloudflare.com/cloudflared bookworm main" | sudo tee /etc/apt/sources.list.d/cloudflared.list
-sudo apt update && sudo apt install cloudflared
+curl -L https://pkg.cloudflare.com/cloudflare-main.gpg | doas tee /usr/share/keyrings/cloudflare-archive-keyring.gpg >/dev/null
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-archive-keyring.gpg] https://pkg.cloudflare.com/cloudflared bookworm main" | doas tee /etc/apt/sources.list.d/cloudflared.list
+doas apt update && doas apt install cloudflared
 ```
 
 ### Create and configure the tunnel
@@ -163,10 +163,10 @@ cloudflared tunnel route dns student-reminder api.yourdomain.com
 ### Run as a service
 
 ```bash
-sudo cloudflared service install
-sudo systemctl enable cloudflared
-sudo systemctl start cloudflared
-sudo systemctl status cloudflared
+doas cloudflared service install
+doas systemctl enable cloudflared
+doas systemctl start cloudflared
+doas systemctl status cloudflared
 ```
 
 ---
@@ -209,5 +209,5 @@ The app sends the user's Firebase ID token with every request. The backend verif
 ```bash
 cd /opt/student-reminder-backend
 git pull
-sudo systemctl restart student-reminder
+doas systemctl restart student-reminder
 ```
