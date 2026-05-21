@@ -1,0 +1,15 @@
+[Unit]
+Description=Student Reminder Backend
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/student-reminder-backend/backend
+EnvironmentFile=/opt/student-reminder-backend/backend/.env
+ExecStart=/opt/student-reminder-backend/backend/venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

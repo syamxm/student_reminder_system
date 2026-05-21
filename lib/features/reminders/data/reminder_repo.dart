@@ -46,6 +46,8 @@ class ReminderRepo {
     required String description,
     required DateTime dueAt,
     required String priority,
+    ReminderRecurrence recurrence = ReminderRecurrence.none,
+    List<int> reminderDaysBefore = const [],
   }) async {
     final uid = _firebaseAuth.currentUser?.uid;
 
@@ -65,6 +67,8 @@ class ReminderRepo {
       'dueAt': Timestamp.fromDate(dueAt),
       'priority': priority,
       'isCompleted': false,
+      'recurrence': recurrence.value,
+      'reminderDaysBefore': reminderDaysBefore,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -104,5 +108,19 @@ class ReminderRepo {
     }
 
     await _remindersRef.doc(reminderId).delete();
+  }
+
+  Future<void> advanceRecurringReminder(ReminderModel reminder) async {
+    final nextDue = reminder.recurrence.nextDueDate(reminder.dueAt);
+
+    if (nextDue == null) {
+      throw StateError('Cannot advance non-recurring reminder.');
+    }
+
+    await _remindersRef.doc(reminder.id).update({
+      'dueAt': Timestamp.fromDate(nextDue),
+      'isCompleted': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 }

@@ -21,6 +21,8 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime = TimeOfDay.now();
   ReminderPriority _selectedPriority = ReminderPriority.medium;
+  ReminderRecurrence _selectedRecurrence = ReminderRecurrence.none;
+  List<int> _selectedReminderDays = const [];
 
   bool _isSaving = false;
 
@@ -127,6 +129,62 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
                   const SizedBox(height: 14),
 
+                  DropdownButtonFormField<ReminderRecurrence>(
+                    initialValue: _selectedRecurrence,
+                    decoration: const InputDecoration(
+                      labelText: 'Recurrence',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ReminderRecurrence.values.map((recurrence) {
+                      return DropdownMenuItem(
+                        value: recurrence,
+                        child: Text(_recurrenceLabel(recurrence)),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+
+                      setState(() {
+                        _selectedRecurrence = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Early reminders'),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [1, 3, 7, 14].map((days) {
+                          return FilterChip(
+                            label: Text(
+                              days == 1 ? '1 day before' : '$days days before',
+                            ),
+                            selected: _selectedReminderDays.contains(days),
+                            onSelected: _isSaving
+                                ? null
+                                : (selected) {
+                                    setState(() {
+                                      _selectedReminderDays = selected
+                                          ? [..._selectedReminderDays, days]
+                                          : _selectedReminderDays
+                                                .where((d) => d != days)
+                                                .toList();
+                                    });
+                                  },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
                   Row(
                     children: [
                       Expanded(
@@ -211,7 +269,9 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         dueAt: _dueAt,
-        priority: _selectedPriority.toString(),
+        priority: _selectedPriority.value,
+        recurrence: _selectedRecurrence,
+        reminderDaysBefore: _selectedReminderDays,
       );
 
       await NotificationService.instance.scheduleReminderNotification(
@@ -220,6 +280,15 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         description: _descriptionController.text.trim(),
         dueAt: _dueAt,
       );
+
+      if (_selectedReminderDays.isNotEmpty) {
+        await NotificationService.instance.scheduleEarlyReminders(
+          reminderId: reminderId,
+          title: _titleController.text.trim(),
+          dueAt: _dueAt,
+          dayOffsets: _selectedReminderDays,
+        );
+      }
 
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -241,6 +310,19 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         return 'Medium';
       case ReminderPriority.high:
         return 'High';
+    }
+  }
+
+  String _recurrenceLabel(ReminderRecurrence recurrence) {
+    switch (recurrence) {
+      case ReminderRecurrence.none:
+        return 'Does not repeat';
+      case ReminderRecurrence.daily:
+        return 'Daily';
+      case ReminderRecurrence.weekly:
+        return 'Weekly';
+      case ReminderRecurrence.monthly:
+        return 'Monthly';
     }
   }
 

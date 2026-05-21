@@ -42,13 +42,36 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
 
   Future<void> _toggleCompletion(ReminderModel reminder) async {
     try {
-      await _reminderRepo.setReminderCompletion(
-        reminderId: reminder.id,
-        isCompleted: !reminder.isCompleted,
-      );
-      await NotificationService.instance.cancelReminderNotification(
-        reminder.id,
-      );
+      final markingComplete = !reminder.isCompleted;
+
+      if (markingComplete && reminder.recurrence != ReminderRecurrence.none) {
+        await _reminderRepo.advanceRecurringReminder(reminder);
+        final nextDue = reminder.recurrence.nextDueDate(reminder.dueAt)!;
+        await NotificationService.instance.scheduleReminderNotification(
+          reminderId: reminder.id,
+          title: reminder.title,
+          description: reminder.description,
+          dueAt: nextDue,
+        );
+        if (reminder.reminderDaysBefore.isNotEmpty) {
+          await NotificationService.instance.scheduleEarlyReminders(
+            reminderId: reminder.id,
+            title: reminder.title,
+            dueAt: nextDue,
+            dayOffsets: reminder.reminderDaysBefore,
+          );
+        }
+      } else {
+        await _reminderRepo.setReminderCompletion(
+          reminderId: reminder.id,
+          isCompleted: markingComplete,
+        );
+        await NotificationService.instance.cancelAllReminderNotifications(
+          reminder.id,
+          reminder.reminderDaysBefore,
+        );
+      }
+
       if (mounted) Navigator.of(context).pop();
     } catch (error) {
       if (mounted) {
@@ -82,8 +105,9 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
 
     try {
       await _reminderRepo.deleteReminder(reminder.id);
-      await NotificationService.instance.cancelReminderNotification(
+      await NotificationService.instance.cancelAllReminderNotifications(
         reminder.id,
+        reminder.reminderDaysBefore,
       );
       if (mounted) Navigator.of(context).pop();
     } catch (error) {

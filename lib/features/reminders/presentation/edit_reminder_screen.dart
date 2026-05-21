@@ -23,6 +23,8 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   late ReminderPriority _selectedPriority;
+  late ReminderRecurrence _selectedRecurrence;
+  late List<int> _selectedReminderDays;
   late bool _isCompleted;
 
   bool _isSaving = false;
@@ -39,6 +41,8 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
     _selectedDate = widget.reminder.dueAt;
     _selectedTime = TimeOfDay.fromDateTime(widget.reminder.dueAt);
     _selectedPriority = widget.reminder.priority;
+    _selectedRecurrence = widget.reminder.recurrence;
+    _selectedReminderDays = List<int>.from(widget.reminder.reminderDaysBefore);
     _isCompleted = widget.reminder.isCompleted;
   }
 
@@ -146,6 +150,64 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
 
                   const SizedBox(height: 14),
 
+                  DropdownButtonFormField<ReminderRecurrence>(
+                    initialValue: _selectedRecurrence,
+                    decoration: const InputDecoration(
+                      labelText: 'Recurrence',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ReminderRecurrence.values.map((recurrence) {
+                      return DropdownMenuItem(
+                        value: recurrence,
+                        child: Text(_recurrenceLabel(recurrence)),
+                      );
+                    }).toList(),
+                    onChanged: _isSaving
+                        ? null
+                        : (value) {
+                            if (value == null) return;
+
+                            setState(() {
+                              _selectedRecurrence = value;
+                            });
+                          },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Early reminders'),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [1, 3, 7, 14].map((days) {
+                          return FilterChip(
+                            label: Text(
+                              days == 1 ? '1 day before' : '$days days before',
+                            ),
+                            selected: _selectedReminderDays.contains(days),
+                            onSelected: _isSaving
+                                ? null
+                                : (selected) {
+                                    setState(() {
+                                      _selectedReminderDays = selected
+                                          ? [..._selectedReminderDays, days]
+                                          : _selectedReminderDays
+                                                .where((d) => d != days)
+                                                .toList();
+                                    });
+                                  },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 14),
+
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Completed'),
@@ -249,6 +311,8 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
       description: _descriptionController.text.trim(),
       dueAt: _dueAt,
       priority: _selectedPriority,
+      recurrence: _selectedRecurrence,
+      reminderDaysBefore: _selectedReminderDays,
       isCompleted: _isCompleted,
     );
 
@@ -256,8 +320,9 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
       await _reminderRepo.updateReminder(updatedReminder);
 
       if (_isCompleted) {
-        await NotificationService.instance.cancelReminderNotification(
+        await NotificationService.instance.cancelAllReminderNotifications(
           widget.reminder.id,
+          widget.reminder.reminderDaysBefore,
         );
       } else {
         await NotificationService.instance.scheduleReminderNotification(
@@ -266,6 +331,20 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
           description: _descriptionController.text.trim(),
           dueAt: _dueAt,
         );
+
+        if (_selectedReminderDays.isNotEmpty) {
+          await NotificationService.instance.scheduleEarlyReminders(
+            reminderId: widget.reminder.id,
+            title: _titleController.text.trim(),
+            dueAt: _dueAt,
+            dayOffsets: _selectedReminderDays,
+          );
+        } else {
+          await NotificationService.instance.cancelEarlyReminderNotifications(
+            widget.reminder.id,
+            widget.reminder.reminderDaysBefore,
+          );
+        }
       }
 
       if (!mounted) return;
@@ -292,6 +371,19 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
         return 'Medium';
       case ReminderPriority.high:
         return 'High';
+    }
+  }
+
+  String _recurrenceLabel(ReminderRecurrence recurrence) {
+    switch (recurrence) {
+      case ReminderRecurrence.none:
+        return 'Does not repeat';
+      case ReminderRecurrence.daily:
+        return 'Daily';
+      case ReminderRecurrence.weekly:
+        return 'Weekly';
+      case ReminderRecurrence.monthly:
+        return 'Monthly';
     }
   }
 
