@@ -12,6 +12,12 @@ int _notificationIdFromReminderId(String reminderId) {
   return reminderId.hashCode & 0x7fffffff;
 }
 
+int _earlyReminderNotificationId(String reminderId, int minutesOffset) {
+  return '${reminderId}_early_$minutesOffset'.hashCode & 0x7fffffff;
+}
+
+const List<int> _earlyReminderMinuteOffsets = [14 * 24 * 60, 7 * 24 * 60, 3 * 24 * 60, 24 * 60];
+
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse response) {
   // Do not navigate here.
@@ -131,6 +137,63 @@ class NotificationService {
     await _notifications.cancel(id: notificationId);
 
     log('Cancelled reminder notification: id=$notificationId');
+  }
+
+  Future<void> cancelEarlyReminderNotifications(String reminderId) async {
+    await init();
+
+    for (final minutes in _earlyReminderMinuteOffsets) {
+      await _notifications.cancel(
+        id: _earlyReminderNotificationId(reminderId, minutes),
+      );
+    }
+
+    log('Cancelled early reminder notifications for: $reminderId');
+  }
+
+  Future<void> cancelAllReminderNotifications(String reminderId) async {
+    await cancelReminderNotification(reminderId);
+    await cancelEarlyReminderNotifications(reminderId);
+  }
+
+  Future<void> scheduleEarlyReminders({
+    required String reminderId,
+    required String title,
+    required DateTime dueAt,
+  }) async {
+    await init();
+
+    for (final minutes in _earlyReminderMinuteOffsets) {
+      final notifyAt = dueAt.subtract(Duration(minutes: minutes));
+      final notificationId = _earlyReminderNotificationId(reminderId, minutes);
+
+      if (notifyAt.isBefore(DateTime.now())) {
+        await _notifications.cancel(id: notificationId);
+        continue;
+      }
+
+      final scheduledDate = tz.TZDateTime.from(notifyAt, tz.local);
+      final label = _earlyReminderLabel(minutes);
+
+      await _notifications.zonedSchedule(
+        id: notificationId,
+        title: 'Upcoming: $title',
+        body: label,
+        scheduledDate: scheduledDate,
+        notificationDetails: _reminderNotificationDetails(),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: NotificationPayload.reminder(reminderId: reminderId),
+      );
+
+      log('Scheduled early reminder: id=$notificationId offset=${minutes}min at=$scheduledDate');
+    }
+  }
+
+  String _earlyReminderLabel(int minutesOffset) {
+    final days = minutesOffset ~/ (24 * 60);
+    if (days == 1) return 'Due tomorrow';
+    if (days > 1) return 'Due in $days days';
+    return 'Due in $minutesOffset minutes';
   }
 
   Future<void> logPendingNotifications() async {
