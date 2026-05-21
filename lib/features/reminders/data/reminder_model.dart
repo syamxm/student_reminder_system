@@ -86,6 +86,7 @@ class ReminderModel {
     required this.priority,
     required this.isCompleted,
     this.recurrence = ReminderRecurrence.none,
+    this.earlyRemindersEnabled = false,
     this.createdAt,
     this.updatedAt,
   });
@@ -97,6 +98,7 @@ class ReminderModel {
   final ReminderPriority priority;
   final bool isCompleted;
   final ReminderRecurrence recurrence;
+  final bool earlyRemindersEnabled;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -121,6 +123,7 @@ class ReminderModel {
       recurrence: ReminderRecurrenceX.fromString(
         data['recurrence'] as String? ?? 'none',
       ),
+      earlyRemindersEnabled: data['earlyRemindersEnabled'] as bool? ?? false,
       createdAt: _timestampToDate(data['createdAt']),
       updatedAt: _timestampToDate(data['updatedAt']),
     );
@@ -134,6 +137,7 @@ class ReminderModel {
       'priority': priority.value,
       'isCompleted': isCompleted,
       'recurrence': recurrence.value,
+      'earlyRemindersEnabled': earlyRemindersEnabled,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -147,6 +151,7 @@ class ReminderModel {
       'priority': priority.value,
       'isCompleted': isCompleted,
       'recurrence': recurrence.value,
+      'earlyRemindersEnabled': earlyRemindersEnabled,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -159,6 +164,7 @@ class ReminderModel {
     ReminderPriority? priority,
     bool? isCompleted,
     ReminderRecurrence? recurrence,
+    bool? earlyRemindersEnabled,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -170,6 +176,7 @@ class ReminderModel {
       priority: priority ?? this.priority,
       isCompleted: isCompleted ?? this.isCompleted,
       recurrence: recurrence ?? this.recurrence,
+      earlyRemindersEnabled: earlyRemindersEnabled ?? this.earlyRemindersEnabled,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
