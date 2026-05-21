@@ -21,6 +21,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime = TimeOfDay.now();
   ReminderPriority _selectedPriority = ReminderPriority.medium;
+  ReminderRecurrence _selectedRecurrence = ReminderRecurrence.none;
 
   bool _isSaving = false;
 
@@ -127,6 +128,29 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
                   const SizedBox(height: 14),
 
+                  DropdownButtonFormField<ReminderRecurrence>(
+                    initialValue: _selectedRecurrence,
+                    decoration: const InputDecoration(
+                      labelText: 'Recurrence',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ReminderRecurrence.values.map((recurrence) {
+                      return DropdownMenuItem(
+                        value: recurrence,
+                        child: Text(_recurrenceLabel(recurrence)),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+
+                      setState(() {
+                        _selectedRecurrence = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
                   Row(
                     children: [
                       Expanded(
@@ -212,6 +236,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         description: _descriptionController.text.trim(),
         dueAt: _dueAt,
         priority: _selectedPriority.toString(),
+        recurrence: _selectedRecurrence,
       );
 
       await NotificationService.instance.scheduleReminderNotification(
@@ -241,6 +266,19 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         return 'Medium';
       case ReminderPriority.high:
         return 'High';
+    }
+  }
+
+  String _recurrenceLabel(ReminderRecurrence recurrence) {
+    switch (recurrence) {
+      case ReminderRecurrence.none:
+        return 'Does not repeat';
+      case ReminderRecurrence.daily:
+        return 'Daily';
+      case ReminderRecurrence.weekly:
+        return 'Weekly';
+      case ReminderRecurrence.monthly:
+        return 'Monthly';
     }
   }
 
