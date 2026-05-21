@@ -86,7 +86,11 @@ class ReminderModel {
     required this.priority,
     required this.isCompleted,
     this.recurrence = ReminderRecurrence.none,
-    this.earlyRemindersEnabled = false,
+    this.reminderDaysBefore = const [],
+    this.subjectCode,
+    this.subjectName,
+    this.weekNumber,
+    this.semesterCode,
     this.createdAt,
     this.updatedAt,
   });
@@ -98,7 +102,11 @@ class ReminderModel {
   final ReminderPriority priority;
   final bool isCompleted;
   final ReminderRecurrence recurrence;
-  final bool earlyRemindersEnabled;
+  final List<int> reminderDaysBefore;
+  final String? subjectCode;
+  final String? subjectName;
+  final int? weekNumber;
+  final String? semesterCode;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -109,6 +117,15 @@ class ReminderModel {
 
     if (data == null) {
       throw StateError('Reminder document data is null.');
+    }
+
+    final List<int> reminderDaysBefore;
+    final rawDays = data['reminderDaysBefore'];
+    if (rawDays is List && rawDays.isNotEmpty) {
+      reminderDaysBefore = rawDays.whereType<int>().toList();
+    } else {
+      final legacyEnabled = data['earlyRemindersEnabled'] as bool? ?? false;
+      reminderDaysBefore = legacyEnabled ? [1] : [];
     }
 
     return ReminderModel(
@@ -123,7 +140,11 @@ class ReminderModel {
       recurrence: ReminderRecurrenceX.fromString(
         data['recurrence'] as String? ?? 'none',
       ),
-      earlyRemindersEnabled: data['earlyRemindersEnabled'] as bool? ?? false,
+      reminderDaysBefore: reminderDaysBefore,
+      subjectCode: data['subjectCode'] as String?,
+      subjectName: data['subjectName'] as String?,
+      weekNumber: data['weekNumber'] as int?,
+      semesterCode: data['semesterCode'] as String?,
       createdAt: _timestampToDate(data['createdAt']),
       updatedAt: _timestampToDate(data['updatedAt']),
     );
@@ -137,7 +158,11 @@ class ReminderModel {
       'priority': priority.value,
       'isCompleted': isCompleted,
       'recurrence': recurrence.value,
-      'earlyRemindersEnabled': earlyRemindersEnabled,
+      'reminderDaysBefore': reminderDaysBefore,
+      'subjectCode': subjectCode,
+      'subjectName': subjectName,
+      'weekNumber': weekNumber,
+      'semesterCode': semesterCode,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -151,7 +176,11 @@ class ReminderModel {
       'priority': priority.value,
       'isCompleted': isCompleted,
       'recurrence': recurrence.value,
-      'earlyRemindersEnabled': earlyRemindersEnabled,
+      'reminderDaysBefore': reminderDaysBefore,
+      'subjectCode': subjectCode,
+      'subjectName': subjectName,
+      'weekNumber': weekNumber,
+      'semesterCode': semesterCode,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -164,7 +193,11 @@ class ReminderModel {
     ReminderPriority? priority,
     bool? isCompleted,
     ReminderRecurrence? recurrence,
-    bool? earlyRemindersEnabled,
+    List<int>? reminderDaysBefore,
+    String? subjectCode,
+    String? subjectName,
+    int? weekNumber,
+    String? semesterCode,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -176,7 +209,11 @@ class ReminderModel {
       priority: priority ?? this.priority,
       isCompleted: isCompleted ?? this.isCompleted,
       recurrence: recurrence ?? this.recurrence,
-      earlyRemindersEnabled: earlyRemindersEnabled ?? this.earlyRemindersEnabled,
+      reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
+      subjectCode: subjectCode ?? this.subjectCode,
+      subjectName: subjectName ?? this.subjectName,
+      weekNumber: weekNumber ?? this.weekNumber,
+      semesterCode: semesterCode ?? this.semesterCode,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
