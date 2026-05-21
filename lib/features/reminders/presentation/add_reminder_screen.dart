@@ -22,6 +22,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   TimeOfDay _selectedTime = TimeOfDay.now();
   ReminderPriority _selectedPriority = ReminderPriority.medium;
   ReminderRecurrence _selectedRecurrence = ReminderRecurrence.none;
+  bool _earlyRemindersEnabled = false;
 
   bool _isSaving = false;
 
@@ -151,6 +152,24 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
                   const SizedBox(height: 14),
 
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Early reminders'),
+                    subtitle: const Text(
+                      'Notify 14 days, 7 days, 3 days, and 1 day before.',
+                    ),
+                    value: _earlyRemindersEnabled,
+                    onChanged: _isSaving
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _earlyRemindersEnabled = value;
+                            });
+                          },
+                  ),
+
+                  const SizedBox(height: 14),
+
                   Row(
                     children: [
                       Expanded(
@@ -237,6 +256,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         dueAt: _dueAt,
         priority: _selectedPriority.value,
         recurrence: _selectedRecurrence,
+        earlyRemindersEnabled: _earlyRemindersEnabled,
       );
 
       await NotificationService.instance.scheduleReminderNotification(
@@ -245,6 +265,14 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         description: _descriptionController.text.trim(),
         dueAt: _dueAt,
       );
+
+      if (_earlyRemindersEnabled) {
+        await NotificationService.instance.scheduleEarlyReminders(
+          reminderId: reminderId,
+          title: _titleController.text.trim(),
+          dueAt: _dueAt,
+        );
+      }
 
       if (!mounted) return;
       Navigator.of(context).pop();

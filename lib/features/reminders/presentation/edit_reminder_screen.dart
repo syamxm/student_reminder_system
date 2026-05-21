@@ -24,6 +24,7 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
   late TimeOfDay _selectedTime;
   late ReminderPriority _selectedPriority;
   late ReminderRecurrence _selectedRecurrence;
+  late bool _earlyRemindersEnabled;
   late bool _isCompleted;
 
   bool _isSaving = false;
@@ -41,6 +42,7 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
     _selectedTime = TimeOfDay.fromDateTime(widget.reminder.dueAt);
     _selectedPriority = widget.reminder.priority;
     _selectedRecurrence = widget.reminder.recurrence;
+    _earlyRemindersEnabled = widget.reminder.earlyRemindersEnabled;
     _isCompleted = widget.reminder.isCompleted;
   }
 
@@ -175,6 +177,24 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
 
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
+                    title: const Text('Early reminders'),
+                    subtitle: const Text(
+                      'Notify 14 days, 7 days, 3 days, and 1 day before.',
+                    ),
+                    value: _earlyRemindersEnabled,
+                    onChanged: _isSaving
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _earlyRemindersEnabled = value;
+                            });
+                          },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
                     title: const Text('Completed'),
                     subtitle: const Text('Mark this reminder as done.'),
                     value: _isCompleted,
@@ -277,6 +297,7 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
       dueAt: _dueAt,
       priority: _selectedPriority,
       recurrence: _selectedRecurrence,
+      earlyRemindersEnabled: _earlyRemindersEnabled,
       isCompleted: _isCompleted,
     );
 
@@ -284,7 +305,7 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
       await _reminderRepo.updateReminder(updatedReminder);
 
       if (_isCompleted) {
-        await NotificationService.instance.cancelReminderNotification(
+        await NotificationService.instance.cancelAllReminderNotifications(
           widget.reminder.id,
         );
       } else {
@@ -294,6 +315,18 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
           description: _descriptionController.text.trim(),
           dueAt: _dueAt,
         );
+
+        if (_earlyRemindersEnabled) {
+          await NotificationService.instance.scheduleEarlyReminders(
+            reminderId: widget.reminder.id,
+            title: _titleController.text.trim(),
+            dueAt: _dueAt,
+          );
+        } else {
+          await NotificationService.instance.cancelEarlyReminderNotifications(
+            widget.reminder.id,
+          );
+        }
       }
 
       if (!mounted) return;
