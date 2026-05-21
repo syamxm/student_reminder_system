@@ -27,6 +27,50 @@ extension ReminderPriorityX on ReminderPriority {
   }
 }
 
+enum ReminderRecurrence { none, daily, weekly, monthly }
+
+extension ReminderRecurrenceX on ReminderRecurrence {
+  String get value {
+    switch (this) {
+      case ReminderRecurrence.none:
+        return 'none';
+      case ReminderRecurrence.daily:
+        return 'daily';
+      case ReminderRecurrence.weekly:
+        return 'weekly';
+      case ReminderRecurrence.monthly:
+        return 'monthly';
+    }
+  }
+
+  static ReminderRecurrence fromString(String value) {
+    switch (value) {
+      case 'daily':
+        return ReminderRecurrence.daily;
+      case 'weekly':
+        return ReminderRecurrence.weekly;
+      case 'monthly':
+        return ReminderRecurrence.monthly;
+      case 'none':
+      default:
+        return ReminderRecurrence.none;
+    }
+  }
+
+  DateTime? nextDueDate(DateTime from) {
+    switch (this) {
+      case ReminderRecurrence.none:
+        return null;
+      case ReminderRecurrence.daily:
+        return from.add(const Duration(days: 1));
+      case ReminderRecurrence.weekly:
+        return from.add(const Duration(days: 7));
+      case ReminderRecurrence.monthly:
+        return DateTime(from.year, from.month + 1, from.day, from.hour, from.minute);
+    }
+  }
+}
+
 class ReminderModel {
   const ReminderModel({
     required this.id,
@@ -35,6 +79,7 @@ class ReminderModel {
     required this.dueAt,
     required this.priority,
     required this.isCompleted,
+    this.recurrence = ReminderRecurrence.none,
     this.createdAt,
     this.updatedAt,
   });
@@ -45,6 +90,7 @@ class ReminderModel {
   final DateTime dueAt;
   final ReminderPriority priority;
   final bool isCompleted;
+  final ReminderRecurrence recurrence;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -66,6 +112,9 @@ class ReminderModel {
         data['priority'] as String? ?? 'low',
       ),
       isCompleted: data['isCompleted'] as bool? ?? false,
+      recurrence: ReminderRecurrenceX.fromString(
+        data['recurrence'] as String? ?? 'none',
+      ),
       createdAt: _timestampToDate(data['createdAt']),
       updatedAt: _timestampToDate(data['updatedAt']),
     );
@@ -78,6 +127,7 @@ class ReminderModel {
       'dueAt': Timestamp.fromDate(dueAt),
       'priority': priority.value,
       'isCompleted': isCompleted,
+      'recurrence': recurrence.value,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
@@ -90,6 +140,7 @@ class ReminderModel {
       'dueAt': Timestamp.fromDate(dueAt),
       'priority': priority.value,
       'isCompleted': isCompleted,
+      'recurrence': recurrence.value,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -101,6 +152,7 @@ class ReminderModel {
     DateTime? dueAt,
     ReminderPriority? priority,
     bool? isCompleted,
+    ReminderRecurrence? recurrence,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -111,6 +163,7 @@ class ReminderModel {
       dueAt: dueAt ?? this.dueAt,
       priority: priority ?? this.priority,
       isCompleted: isCompleted ?? this.isCompleted,
+      recurrence: recurrence ?? this.recurrence,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
