@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../data/reminder_model.dart';
 import '../data/reminder_repo.dart';
+import 'package:student_reminder_system/features/timetable/data/timetable_model.dart';
+import 'package:student_reminder_system/features/timetable/data/timetable_repo.dart';
 import 'package:student_reminder_system/core/notifications/notification_service.dart';
+import 'reminder_form_fields.dart';
 
 class AddReminderScreen extends StatefulWidget {
   const AddReminderScreen({super.key});
@@ -17,6 +20,8 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _categoryController = TextEditingController();
+  final _subjectController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime = TimeOfDay.now();
@@ -24,13 +29,42 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   ReminderRecurrence _selectedRecurrence = ReminderRecurrence.none;
   List<int> _selectedReminderDays = const [];
 
+  String _selectedCategory = 'general';
+  bool _categoryManual = false;
+
+  List<TimetableModel> _subjects = const [];
+  String? _selectedSubjectCode;
+  bool _subjectManual = false;
+  bool _subjectsLoading = true;
+
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubjects();
+  }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _categoryController.dispose();
+    _subjectController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSubjects() async {
+    try {
+      final entries = await TimetableRepo().watchTimetable().first;
+      if (!mounted) return;
+      setState(() {
+        _subjects = uniqueSubjects(entries);
+        _subjectsLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _subjectsLoading = false);
+    }
   }
 
   DateTime get _dueAt {
@@ -102,6 +136,34 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                       hintText: 'Optional details',
                       border: OutlineInputBorder(),
                     ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  CategoryField(
+                    selectedCategory: _selectedCategory,
+                    manual: _categoryManual,
+                    controller: _categoryController,
+                    enabled: !_isSaving,
+                    onCategoryChanged: (value) =>
+                        setState(() => _selectedCategory = value),
+                    onManualChanged: (value) =>
+                        setState(() => _categoryManual = value),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  SubjectField(
+                    subjects: _subjects,
+                    loading: _subjectsLoading,
+                    selectedSubjectCode: _selectedSubjectCode,
+                    manual: _subjectManual,
+                    controller: _subjectController,
+                    enabled: !_isSaving,
+                    onSubjectChanged: (code) =>
+                        setState(() => _selectedSubjectCode = code),
+                    onManualChanged: (value) =>
+                        setState(() => _subjectManual = value),
                   ),
 
                   const SizedBox(height: 14),
@@ -265,13 +327,24 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     setState(() => _isSaving = true);
 
     try {
+      final category = _resolveCategory();
+      final subject = _resolveSubject();
+
       final reminderId = await _reminderRepo.addReminder(
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim(),
-        dueAt: _dueAt,
-        priority: _selectedPriority.value,
-        recurrence: _selectedRecurrence,
-        reminderDaysBefore: _selectedReminderDays,
+        ReminderModel(
+          id: '',
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          dueAt: _dueAt,
+          priority: _selectedPriority,
+          isCompleted: false,
+          recurrence: _selectedRecurrence,
+          reminderDaysBefore: _selectedReminderDays,
+          category: category,
+          subjectCode: subject.code,
+          subjectName: subject.name,
+          semesterCode: subject.semesterCode,
+        ),
       );
 
       await NotificationService.instance.scheduleReminderNotification(
@@ -300,6 +373,31 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
     } finally {
       setState(() => _isSaving = false);
     }
+  }
+
+  String _resolveCategory() {
+    if (_categoryManual) {
+      final text = _categoryController.text.trim();
+      return text.isEmpty ? 'general' : text;
+    }
+    return _selectedCategory;
+  }
+
+  ({String? code, String? name, String? semesterCode}) _resolveSubject() {
+    if (_subjectManual) {
+      final text = _subjectController.text.trim();
+      return (code: null, name: text.isEmpty ? null : text, semesterCode: null);
+    }
+    final code = _selectedSubjectCode;
+    if (code == null) {
+      return (code: null, name: null, semesterCode: null);
+    }
+    final entry = _subjects.firstWhere((s) => s.subjectCode == code);
+    return (
+      code: entry.subjectCode,
+      name: entry.subjectName,
+      semesterCode: entry.semesterCode,
+    );
   }
 
   String _priorityLabel(ReminderPriority priority) {

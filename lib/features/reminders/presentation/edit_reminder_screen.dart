@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../data/reminder_model.dart';
 import '../data/reminder_repo.dart';
+import 'package:student_reminder_system/features/timetable/data/timetable_model.dart';
+import 'package:student_reminder_system/features/timetable/data/timetable_repo.dart';
 import 'package:student_reminder_system/core/notifications/notification_service.dart';
+import 'reminder_form_fields.dart';
 
 class EditReminderScreen extends StatefulWidget {
   const EditReminderScreen({super.key, required this.reminder});
@@ -19,6 +22,8 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
 
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
+  final _categoryController = TextEditingController();
+  final _subjectController = TextEditingController();
 
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
@@ -26,6 +31,14 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
   late ReminderRecurrence _selectedRecurrence;
   late List<int> _selectedReminderDays;
   late bool _isCompleted;
+
+  late String _selectedCategory;
+  late bool _categoryManual;
+
+  List<TimetableModel> _subjects = const [];
+  String? _selectedSubjectCode;
+  bool _subjectManual = false;
+  bool _subjectsLoading = true;
 
   bool _isSaving = false;
 
@@ -44,13 +57,60 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
     _selectedRecurrence = widget.reminder.recurrence;
     _selectedReminderDays = List<int>.from(widget.reminder.reminderDaysBefore);
     _isCompleted = widget.reminder.isCompleted;
+
+    final category = widget.reminder.category;
+    if (reminderCategories.contains(category)) {
+      _selectedCategory = category;
+      _categoryManual = false;
+    } else {
+      _selectedCategory = 'general';
+      _categoryManual = true;
+      _categoryController.text = category;
+    }
+
+    final code = widget.reminder.subjectCode;
+    final name = widget.reminder.subjectName;
+    if (code != null && code.isNotEmpty) {
+      _selectedSubjectCode = code;
+    } else if (name != null && name.isNotEmpty) {
+      _subjectManual = true;
+      _subjectController.text = name;
+    }
+
+    _loadSubjects();
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _categoryController.dispose();
+    _subjectController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSubjects() async {
+    try {
+      final entries = await TimetableRepo().watchTimetable().first;
+      if (!mounted) return;
+      final subjects = uniqueSubjects(entries);
+      final code = _selectedSubjectCode;
+      final stillExists =
+          code != null && subjects.any((s) => s.subjectCode == code);
+
+      setState(() {
+        _subjects = subjects;
+        _subjectsLoading = false;
+        // Saved subject no longer in timetable: fall back to manual text.
+        if (code != null && !stillExists) {
+          _selectedSubjectCode = null;
+          _subjectManual = true;
+          _subjectController.text = widget.reminder.subjectName ?? '';
+        }
+      });
+    } catch (_) {
+      if (mounted) setState(() => _subjectsLoading = false);
+    }
   }
 
   DateTime get _dueAt {
@@ -121,6 +181,34 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
                       hintText: 'Optional details',
                       border: OutlineInputBorder(),
                     ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  CategoryField(
+                    selectedCategory: _selectedCategory,
+                    manual: _categoryManual,
+                    controller: _categoryController,
+                    enabled: !_isSaving,
+                    onCategoryChanged: (value) =>
+                        setState(() => _selectedCategory = value),
+                    onManualChanged: (value) =>
+                        setState(() => _categoryManual = value),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  SubjectField(
+                    subjects: _subjects,
+                    loading: _subjectsLoading,
+                    selectedSubjectCode: _selectedSubjectCode,
+                    manual: _subjectManual,
+                    controller: _subjectController,
+                    enabled: !_isSaving,
+                    onSubjectChanged: (code) =>
+                        setState(() => _selectedSubjectCode = code),
+                    onManualChanged: (value) =>
+                        setState(() => _subjectManual = value),
                   ),
 
                   const SizedBox(height: 14),
@@ -306,14 +394,25 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
       _isSaving = true;
     });
 
-    final updatedReminder = widget.reminder.copyWith(
+    final category = _resolveCategory();
+    final subject = _resolveSubject();
+
+    final updatedReminder = ReminderModel(
+      id: widget.reminder.id,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       dueAt: _dueAt,
       priority: _selectedPriority,
+      isCompleted: _isCompleted,
       recurrence: _selectedRecurrence,
       reminderDaysBefore: _selectedReminderDays,
-      isCompleted: _isCompleted,
+      category: category,
+      subjectCode: subject.code,
+      subjectName: subject.name,
+      weekNumber: widget.reminder.weekNumber,
+      semesterCode: subject.semesterCode,
+      createdAt: widget.reminder.createdAt,
+      updatedAt: widget.reminder.updatedAt,
     );
 
     try {
@@ -361,6 +460,31 @@ class _EditReminderScreenState extends State<EditReminderScreen> {
         _isSaving = false;
       });
     }
+  }
+
+  String _resolveCategory() {
+    if (_categoryManual) {
+      final text = _categoryController.text.trim();
+      return text.isEmpty ? 'general' : text;
+    }
+    return _selectedCategory;
+  }
+
+  ({String? code, String? name, String? semesterCode}) _resolveSubject() {
+    if (_subjectManual) {
+      final text = _subjectController.text.trim();
+      return (code: null, name: text.isEmpty ? null : text, semesterCode: null);
+    }
+    final code = _selectedSubjectCode;
+    if (code == null) {
+      return (code: null, name: null, semesterCode: null);
+    }
+    final entry = _subjects.firstWhere((s) => s.subjectCode == code);
+    return (
+      code: entry.subjectCode,
+      name: entry.subjectName,
+      semesterCode: entry.semesterCode,
+    );
   }
 
   String _priorityLabel(ReminderPriority priority) {

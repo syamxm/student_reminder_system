@@ -1,5 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+const reminderCategories = ['test', 'assignment', 'project', 'general'];
+
+String reminderCategoryLabel(String category) {
+  switch (category) {
+    case 'test':
+      return 'Test';
+    case 'assignment':
+      return 'Assignment';
+    case 'project':
+      return 'Project';
+    case 'general':
+      return 'General';
+    default:
+      if (category.isEmpty) return 'General';
+      return category[0].toUpperCase() + category.substring(1);
+  }
+}
+
 enum ReminderPriority { low, medium, high }
 
 extension ReminderPriorityX on ReminderPriority {
@@ -87,6 +105,7 @@ class ReminderModel {
     required this.isCompleted,
     this.recurrence = ReminderRecurrence.none,
     this.reminderDaysBefore = const [],
+    this.category = 'general',
     this.subjectCode,
     this.subjectName,
     this.weekNumber,
@@ -103,6 +122,7 @@ class ReminderModel {
   final bool isCompleted;
   final ReminderRecurrence recurrence;
   final List<int> reminderDaysBefore;
+  final String category;
   final String? subjectCode;
   final String? subjectName;
   final int? weekNumber;
@@ -141,6 +161,7 @@ class ReminderModel {
         data['recurrence'] as String? ?? 'none',
       ),
       reminderDaysBefore: reminderDaysBefore,
+      category: data['category'] as String? ?? 'general',
       subjectCode: data['subjectCode'] as String?,
       subjectName: data['subjectName'] as String?,
       weekNumber: data['weekNumber'] as int?,
@@ -159,6 +180,7 @@ class ReminderModel {
       'isCompleted': isCompleted,
       'recurrence': recurrence.value,
       'reminderDaysBefore': reminderDaysBefore,
+      'category': category,
       'subjectCode': subjectCode,
       'subjectName': subjectName,
       'weekNumber': weekNumber,
@@ -177,6 +199,7 @@ class ReminderModel {
       'isCompleted': isCompleted,
       'recurrence': recurrence.value,
       'reminderDaysBefore': reminderDaysBefore,
+      'category': category,
       'subjectCode': subjectCode,
       'subjectName': subjectName,
       'weekNumber': weekNumber,
@@ -194,6 +217,7 @@ class ReminderModel {
     bool? isCompleted,
     ReminderRecurrence? recurrence,
     List<int>? reminderDaysBefore,
+    String? category,
     String? subjectCode,
     String? subjectName,
     int? weekNumber,
@@ -210,6 +234,7 @@ class ReminderModel {
       isCompleted: isCompleted ?? this.isCompleted,
       recurrence: recurrence ?? this.recurrence,
       reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
+      category: category ?? this.category,
       subjectCode: subjectCode ?? this.subjectCode,
       subjectName: subjectName ?? this.subjectName,
       weekNumber: weekNumber ?? this.weekNumber,

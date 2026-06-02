@@ -95,6 +95,54 @@ class ReminderCard extends StatelessWidget {
                               ],
                             ),
 
+                            // Category + subject
+                            if (_hasMeta(reminder)) ...[
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  if (_showCategory(reminder))
+                                    _MetaChip(
+                                      label: reminderCategoryLabel(
+                                        reminder.category,
+                                      ),
+                                      color: theme.colorScheme.secondary,
+                                    ),
+                                  if (_showCategory(reminder) &&
+                                      _hasSubject(reminder))
+                                    const SizedBox(width: 6),
+                                  if (_hasSubject(reminder))
+                                    Flexible(
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.book_outlined,
+                                            size: 12,
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Flexible(
+                                            child: Text(
+                                              reminder.subjectName!.trim(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                    color: theme
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+
                             // Description
                             if (reminder.description.trim().isNotEmpty) ...[
                               const SizedBox(height: 3),
@@ -197,6 +245,13 @@ class ReminderCard extends StatelessWidget {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
+  static bool _hasSubject(ReminderModel r) =>
+      r.subjectName?.trim().isNotEmpty ?? false;
+
+  static bool _showCategory(ReminderModel r) => r.category != 'general';
+
+  static bool _hasMeta(ReminderModel r) => _showCategory(r) || _hasSubject(r);
+
   static String _priorityLabel(ReminderPriority priority) {
     switch (priority) {
       case ReminderPriority.high:
@@ -272,6 +327,33 @@ enum _CardAction { edit, delete }
 
 class _PriorityBadge extends StatelessWidget {
   const _PriorityBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({required this.label, required this.color});
 
   final String label;
   final Color color;
