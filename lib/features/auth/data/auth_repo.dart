@@ -93,6 +93,7 @@ class AuthRepo {
       userData.addAll({
         'username': '',
         'streakCount': 0,
+        'lastStreakDate': null,
         'missedDeadlinesCount': 0,
         'createdAt': FieldValue.serverTimestamp(),
       });

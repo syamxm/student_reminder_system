@@ -5,6 +5,7 @@ import '../data/reminder_repo.dart';
 import 'edit_reminder_screen.dart';
 import 'reminder_card.dart';
 import 'package:student_reminder_system/core/notifications/notification_service.dart';
+import 'package:student_reminder_system/features/streak/data/streak_repo.dart';
 
 class ReminderList extends StatefulWidget {
   const ReminderList({
@@ -24,6 +25,7 @@ class ReminderList extends StatefulWidget {
 
 class _ReminderListState extends State<ReminderList> {
   final ReminderRepo _reminderRepo = ReminderRepo();
+  final StreakRepo _streakRepo = StreakRepo();
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +148,7 @@ class _ReminderListState extends State<ReminderList> {
       );
 
       if (isCompleted) {
+        await _recordStreak(reminder.dueAt);
         await NotificationService.instance.cancelAllReminderNotifications(
           reminder.id,
           reminder.reminderDaysBefore,
@@ -172,6 +175,14 @@ class _ReminderListState extends State<ReminderList> {
           SnackBar(content: Text('Failed to update reminder: $error')),
         );
       }
+    }
+  }
+
+  Future<void> _recordStreak(DateTime dueAt) async {
+    try {
+      await _streakRepo.recordCompletion(dueAt: dueAt);
+    } catch (_) {
+      // Streak update is best-effort; the reminder is already marked done.
     }
   }
 
