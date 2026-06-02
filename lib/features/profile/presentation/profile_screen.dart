@@ -23,6 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _campusController = TextEditingController();
   final _facultyController = TextEditingController();
 
+  ProgramGroup? _selectedGroup;
   String? _selectedSemester;
   bool _isLoading = true;
   bool _isSaving = false;
@@ -60,6 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       savedFaculty = profile.faculty;
       _campusController.text = profile.campus ?? '';
       _facultyController.text = profile.faculty ?? '';
+      _selectedGroup = profile.programGroup;
       _selectedSemester = profile.activeSemester;
     }
 
@@ -181,6 +183,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         displayName: widget.user.displayName ?? '',
         campus: campus,
         faculty: faculty,
+        programGroup: _selectedGroup,
         activeSemester: _selectedSemester,
       );
 
@@ -259,25 +262,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 14),
 
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedSemester,
+                  DropdownButtonFormField<ProgramGroup>(
+                    initialValue: _selectedGroup,
+                    isExpanded: true,
                     decoration: const InputDecoration(
-                      labelText: 'Active Semester',
+                      labelText: 'Program Group',
                       border: OutlineInputBorder(),
                     ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('None')),
-                      ...semesterStartDates.keys.map((code) {
-                        return DropdownMenuItem(
-                          value: code,
-                          child: Text(semesterLabels[code] ?? code),
-                        );
-                      }),
-                    ],
+                    items: ProgramGroup.values
+                        .map(
+                          (g) => DropdownMenuItem(
+                            value: g,
+                            child: Text(programGroupLabel(g)),
+                          ),
+                        )
+                        .toList(),
                     onChanged: _isSaving
                         ? null
-                        : (value) => setState(() => _selectedSemester = value),
+                        : (g) => setState(() {
+                            _selectedGroup = g;
+                            if (g == null ||
+                                _selectedSemester == null ||
+                                findSemester(g, _selectedSemester!) == null) {
+                              _selectedSemester = null;
+                            }
+                          }),
                   ),
+
+                  const SizedBox(height: 14),
+
+                  _buildSemesterField(),
 
                   const SizedBox(height: 24),
 
@@ -301,6 +315,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSemesterField() {
+    final group = _selectedGroup;
+    final semesters = group != null
+        ? semestersForGroup(group)
+        : <AcademicSemester>[];
+    final codes = semesters.map((s) => s.code).toSet();
+    final value =
+        (_selectedSemester != null && codes.contains(_selectedSemester))
+        ? _selectedSemester
+        : null;
+
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Active Semester',
+        border: const OutlineInputBorder(),
+        helperText: group == null ? 'Select a program group first' : null,
+      ),
+      items: [
+        const DropdownMenuItem(value: null, child: Text('None')),
+        ...semesters.map(
+          (s) => DropdownMenuItem(value: s.code, child: Text(s.label)),
+        ),
+      ],
+      onChanged: (group == null || _isSaving)
+          ? null
+          : (v) => setState(() => _selectedSemester = v),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:student_reminder_system/core/semester_engine.dart';
+import 'package:student_reminder_system/features/profile/data/profile_repo.dart';
 import 'package:student_reminder_system/features/timetable/data/timetable_model.dart';
 import 'package:student_reminder_system/features/timetable/data/timetable_repo.dart';
 
@@ -16,6 +17,9 @@ class TimetableEditScreen extends StatefulWidget {
 class _TimetableEditScreenState extends State<TimetableEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _repo = TimetableRepo();
+  final _profileRepo = ProfileRepo();
+
+  ProgramGroup? _programGroup;
 
   late final _subjectCodeController = TextEditingController(
     text: widget.entry.subjectCode,
@@ -45,6 +49,50 @@ class _TimetableEditScreenState extends State<TimetableEditScreen> {
     'Saturday',
     'Sunday',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProgramGroup();
+  }
+
+  Future<void> _loadProgramGroup() async {
+    final profile = await _profileRepo.getProfile();
+    if (profile != null && mounted) {
+      setState(() => _programGroup = profile.programGroup);
+    }
+  }
+
+  Widget _buildSemesterDropdown() {
+    final group = _programGroup;
+    final semesters = group != null
+        ? semestersForGroup(group)
+        : <AcademicSemester>[];
+    final codes = semesters.map((s) => s.code).toSet();
+    final value =
+        (_selectedSemester != null && codes.contains(_selectedSemester))
+        ? _selectedSemester
+        : null;
+
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Semester',
+        border: const OutlineInputBorder(),
+        helperText: group == null ? 'Set your program group in Profile' : null,
+      ),
+      items: [
+        const DropdownMenuItem(value: null, child: Text('None')),
+        ...semesters.map(
+          (s) => DropdownMenuItem(value: s.code, child: Text(s.label)),
+        ),
+      ],
+      onChanged: group == null
+          ? null
+          : (v) => setState(() => _selectedSemester = v),
+    );
+  }
 
   TimeOfDay _parseTime(String t) {
     final parts = t.split(':');
@@ -227,23 +275,7 @@ class _TimetableEditScreenState extends State<TimetableEditScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedSemester,
-                    decoration: const InputDecoration(
-                      labelText: 'Semester',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('None')),
-                      ...semesterStartDates.keys.map(
-                        (code) => DropdownMenuItem(
-                          value: code,
-                          child: Text(semesterLabels[code] ?? code),
-                        ),
-                      ),
-                    ],
-                    onChanged: (v) => setState(() => _selectedSemester = v),
-                  ),
+                  _buildSemesterDropdown(),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
