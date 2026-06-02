@@ -7,9 +7,16 @@ import 'reminder_card.dart';
 import 'package:student_reminder_system/core/notifications/notification_service.dart';
 
 class ReminderList extends StatefulWidget {
-  const ReminderList({super.key, this.limit});
+  const ReminderList({
+    super.key,
+    this.limit,
+    this.categoryFilter,
+    this.groupBySubject = false,
+  });
 
   final int? limit;
+  final String? categoryFilter;
+  final bool groupBySubject;
 
   @override
   State<ReminderList> createState() => _ReminderListState();
@@ -36,10 +43,24 @@ class _ReminderListState extends State<ReminderList> {
           );
         }
 
-        final reminders = snapshot.data ?? const [];
+        final all = snapshot.data ?? const <ReminderModel>[];
+
+        final filter = widget.categoryFilter;
+        final reminders =
+            (filter == null
+                  ? all.toList()
+                  : all.where((r) => r.category == filter).toList())
+              ..sort(_compare);
 
         if (reminders.isEmpty) {
           return const _EmptyReminderState();
+        }
+
+        if (widget.groupBySubject) {
+          return ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            children: _buildGroupedChildren(reminders),
+          );
         }
 
         final visibleReminders = widget.limit == null
@@ -50,43 +71,101 @@ class _ReminderListState extends State<ReminderList> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           itemCount: visibleReminders.length,
           itemBuilder: (context, index) {
-            final reminder = visibleReminders[index];
-
-            return ReminderCard(
-              reminder: reminder,
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => EditReminderScreen(reminder: reminder),
-                  ),
-                );
-              },
-              onCompletionChanged: (isCompleted) async {
-                await _setCompletion(
-                  reminderId: reminder.id,
-                  isCompleted: isCompleted,
-                );
-              },
-              onDeletePressed: () async {
-                await _confirmDelete(reminder);
-              },
-            );
+            return _buildCard(visibleReminders[index]);
           },
         );
       },
     );
   }
 
-  Future<void> _setCompletion({
-    required String reminderId,
-    required bool isCompleted,
-  }) async {
+  /// Incomplete first, then due date ascending, then priority descending.
+  int _compare(ReminderModel a, ReminderModel b) {
+    if (a.isCompleted != b.isCompleted) {
+      return a.isCompleted ? 1 : -1;
+    }
+
+    final byDue = a.dueAt.compareTo(b.dueAt);
+    if (byDue != 0) return byDue;
+
+    return b.priority.index.compareTo(a.priority.index);
+  }
+
+  List<Widget> _buildGroupedChildren(List<ReminderModel> reminders) {
+    const noSubject = 'No subject';
+    final groups = <String, List<ReminderModel>>{};
+
+    for (final reminder in reminders) {
+      final name = (reminder.subjectName?.trim().isNotEmpty ?? false)
+          ? reminder.subjectName!.trim()
+          : noSubject;
+      groups.putIfAbsent(name, () => []).add(reminder);
+    }
+
+    final keys = groups.keys.toList()
+      ..sort((a, b) {
+        if (a == noSubject) return 1;
+        if (b == noSubject) return -1;
+        return groups[a]!.first.dueAt.compareTo(groups[b]!.first.dueAt);
+      });
+
+    final children = <Widget>[];
+    for (final key in keys) {
+      children.add(_SubjectHeader(label: key));
+      children.addAll(groups[key]!.map(_buildCard));
+    }
+    return children;
+  }
+
+  Widget _buildCard(ReminderModel reminder) {
+    return ReminderCard(
+      reminder: reminder,
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EditReminderScreen(reminder: reminder),
+          ),
+        );
+      },
+      onCompletionChanged: (isCompleted) async {
+        await _setCompletion(reminder, isCompleted);
+      },
+      onDeletePressed: () async {
+        await _confirmDelete(reminder);
+      },
+    );
+  }
+
+  Future<void> _setCompletion(
+    ReminderModel reminder,
+    bool isCompleted,
+  ) async {
     try {
       await _reminderRepo.setReminderCompletion(
-        reminderId: reminderId,
+        reminderId: reminder.id,
         isCompleted: isCompleted,
       );
-      await NotificationService.instance.cancelReminderNotification(reminderId);
+
+      if (isCompleted) {
+        await NotificationService.instance.cancelAllReminderNotifications(
+          reminder.id,
+          reminder.reminderDaysBefore,
+        );
+      } else {
+        await NotificationService.instance.scheduleReminderNotification(
+          reminderId: reminder.id,
+          title: reminder.title,
+          description: reminder.description,
+          dueAt: reminder.dueAt,
+        );
+        if (reminder.reminderDaysBefore.isNotEmpty) {
+          await NotificationService.instance.scheduleEarlyReminders(
+            reminderId: reminder.id,
+            title: reminder.title,
+            dueAt: reminder.dueAt,
+            dayOffsets: reminder.reminderDaysBefore,
+          );
+        }
+      }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -121,8 +200,9 @@ class _ReminderListState extends State<ReminderList> {
 
     try {
       await _reminderRepo.deleteReminder(reminder.id);
-      await NotificationService.instance.cancelReminderNotification(
+      await NotificationService.instance.cancelAllReminderNotifications(
         reminder.id,
+        reminder.reminderDaysBefore,
       );
     } catch (error) {
       if (mounted) {
@@ -131,6 +211,38 @@ class _ReminderListState extends State<ReminderList> {
         );
       }
     }
+  }
+}
+
+class _SubjectHeader extends StatelessWidget {
+  const _SubjectHeader({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+      child: Row(
+        children: [
+          Icon(
+            Icons.book_outlined,
+            size: 16,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
