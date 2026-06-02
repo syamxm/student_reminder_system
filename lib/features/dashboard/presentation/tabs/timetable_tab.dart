@@ -215,9 +215,13 @@ class _TimetableCard extends StatelessWidget {
                           color: cs.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          entry.room,
-                          style: Theme.of(context).textTheme.bodySmall,
+                        Flexible(
+                          child: Text(
+                            entry.room,
+                            style: Theme.of(context).textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ],
