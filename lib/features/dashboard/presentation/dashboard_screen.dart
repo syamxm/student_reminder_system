@@ -6,6 +6,7 @@ import 'package:student_reminder_system/features/dashboard/presentation/tabs/pro
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/reminders_tab.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/timetable_tab.dart';
 import 'package:student_reminder_system/features/reminders/presentation/add_reminder_screen.dart';
+import '../../../core/notifications/class_notification_sync.dart';
 import '../../../core/notifications/notification_tap_router.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -31,6 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationTapRouter.openPendingIfPossible();
+      ClassNotificationSync().sync();
     });
   }
 

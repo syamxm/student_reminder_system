@@ -103,6 +103,16 @@ AcademicSemester? findSemester(ProgramGroup group, String code) {
   return null;
 }
 
+bool isLectureDate(AcademicSemester sem, DateTime date) {
+  final day = _dateOnly(date);
+  for (final p in sem.phases) {
+    if (p.isLecture && !day.isBefore(p.start) && !day.isAfter(p.end)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 String currentStatusLabel(AcademicSemester sem, [DateTime? now]) {
   final today = _dateOnly(now ?? DateTime.now());
 

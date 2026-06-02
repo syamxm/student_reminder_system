@@ -240,6 +240,63 @@ class NotificationService {
     );
   }
 
+  static const String _classChannelId = 'class_reminder_channel';
+  static const String _classChannelName = 'Class Reminders';
+  static const String _classChannelDescription =
+      'Notifications 10 minutes before each timetable class.';
+
+  NotificationDetails _classNotificationDetails() {
+    return const NotificationDetails(
+      android: AndroidNotificationDetails(
+        _classChannelId,
+        _classChannelName,
+        channelDescription: _classChannelDescription,
+        importance: Importance.max,
+        priority: Priority.high,
+      ),
+    );
+  }
+
+  Future<void> cancelAllClassNotifications() async {
+    await init();
+
+    final pending = await _notifications.pendingNotificationRequests();
+
+    for (final item in pending) {
+      if (NotificationPayload.parseClassEntryId(item.payload) != null) {
+        await _notifications.cancel(id: item.id);
+      }
+    }
+  }
+
+  Future<void> scheduleClassNotification({
+    required int id,
+    required String subjectCode,
+    required String subjectName,
+    required String room,
+    required DateTime notifyAt,
+    required String entryId,
+  }) async {
+    await init();
+
+    if (notifyAt.isBefore(DateTime.now())) return;
+
+    final scheduledDate = tz.TZDateTime.from(notifyAt, tz.local);
+    final body = room.isEmpty ? subjectName : '$subjectName · $room';
+
+    await _notifications.zonedSchedule(
+      id: id,
+      title: '$subjectCode in 10 min',
+      body: body,
+      scheduledDate: scheduledDate,
+      notificationDetails: _classNotificationDetails(),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: NotificationPayload.classReminder(entryId: entryId),
+    );
+
+    log('Scheduled class notification: id=$id at=$scheduledDate');
+  }
+
   NotificationDetails _debugNotificationDetails() {
     return const NotificationDetails(
       android: AndroidNotificationDetails(

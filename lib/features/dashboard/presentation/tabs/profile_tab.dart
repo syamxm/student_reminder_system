@@ -5,6 +5,7 @@ import 'package:student_reminder_system/core/semester_engine.dart';
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/widgets/dashboard_info_card.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/widgets/welcome_card.dart';
+import 'package:student_reminder_system/core/notifications/class_notification_sync.dart';
 import 'package:student_reminder_system/core/notifications/notification_service.dart';
 import 'package:student_reminder_system/features/profile/data/profile_repo.dart';
 import 'package:student_reminder_system/features/profile/data/user_profile_model.dart';
@@ -84,6 +85,25 @@ class ProfileTab extends StatelessWidget {
               },
               icon: const Icon(Icons.edit_outlined),
               label: const Text('Edit Profile'),
+            ),
+            const SizedBox(height: 12),
+
+            Card(
+              margin: EdgeInsets.zero,
+              child: SwitchListTile(
+                secondary: const Icon(Icons.notifications_active_outlined),
+                title: const Text('Class reminders'),
+                subtitle: const Text('Notify 10 minutes before each class'),
+                value: profile?.classRemindersEnabled ?? true,
+                onChanged: profile == null
+                    ? null
+                    : (value) async {
+                        await ProfileRepo().saveProfile(
+                          profile.copyWith(classRemindersEnabled: value),
+                        );
+                        await ClassNotificationSync().sync();
+                      },
+              ),
             ),
             const SizedBox(height: 12),
 

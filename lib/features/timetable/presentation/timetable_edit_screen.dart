@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:student_reminder_system/core/notifications/class_notification_sync.dart';
 import 'package:student_reminder_system/core/semester_engine.dart';
 import 'package:student_reminder_system/features/profile/data/profile_repo.dart';
 import 'package:student_reminder_system/features/timetable/data/timetable_model.dart';
@@ -130,6 +131,7 @@ class _TimetableEditScreenState extends State<TimetableEditScreen> {
       );
 
       await _repo.updateEntry(updated);
+      await ClassNotificationSync().sync();
 
       if (!mounted) return;
       Navigator.of(context).pop();
@@ -168,6 +170,7 @@ class _TimetableEditScreenState extends State<TimetableEditScreen> {
 
     try {
       await _repo.deleteEntry(widget.entry.id);
+      await ClassNotificationSync().sync();
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (e) {
