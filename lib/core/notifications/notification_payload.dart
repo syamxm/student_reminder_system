@@ -7,6 +7,38 @@ class NotificationPayload {
     return jsonEncode({'type': 'reminder', 'reminderId': reminderId});
   }
 
+  static String classReminder({required String entryId}) {
+    return jsonEncode({'type': 'class', 'entryId': entryId});
+  }
+
+  static String? parseClassEntryId(String? payload) {
+    if (payload == null || payload.trim().isEmpty) {
+      return null;
+    }
+
+    try {
+      final decoded = jsonDecode(payload);
+
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+
+      if (decoded['type'] != 'class') {
+        return null;
+      }
+
+      final entryId = decoded['entryId'];
+
+      if (entryId is! String || entryId.trim().isEmpty) {
+        return null;
+      }
+
+      return entryId.trim();
+    } catch (_) {
+      return null;
+    }
+  }
+
   static String? parseReminderId(String? payload) {
     if (payload == null || payload.trim().isEmpty) {
       return null;

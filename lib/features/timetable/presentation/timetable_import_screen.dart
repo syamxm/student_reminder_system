@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:student_reminder_system/core/api/timetable_api.dart';
+import 'package:student_reminder_system/core/notifications/class_notification_sync.dart';
 import 'package:student_reminder_system/core/semester_engine.dart';
 import 'package:student_reminder_system/features/profile/data/profile_repo.dart';
 import 'package:student_reminder_system/features/timetable/data/timetable_model.dart';
@@ -96,6 +97,7 @@ class _TimetableImportScreenState extends State<TimetableImportScreen> {
       final entries = _mapToModels(raw, matric);
 
       await _repo.saveTimetable(entries);
+      await ClassNotificationSync().sync();
 
       if (mounted) {
         setState(() => _importedCount = _countSubjects(raw));
@@ -472,6 +474,7 @@ class _ManualEntryScreenState extends State<_ManualEntryScreen> {
       );
 
       await _repo.saveTimetable([entry]);
+      await ClassNotificationSync().sync();
 
       if (!mounted) return;
       ScaffoldMessenger.of(

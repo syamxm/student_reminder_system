@@ -12,6 +12,7 @@ class UserProfileModel {
     this.programGroup,
     this.activeSemester,
     this.lastTimetableSync,
+    this.classRemindersEnabled = true,
   });
 
   final String uid;
@@ -22,6 +23,7 @@ class UserProfileModel {
   final ProgramGroup? programGroup;
   final String? activeSemester;
   final DateTime? lastTimetableSync;
+  final bool classRemindersEnabled;
 
   factory UserProfileModel.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> doc,
@@ -42,6 +44,7 @@ class UserProfileModel {
       activeSemester: data['activeSemester'] as String?,
       lastTimetableSync:
           (data['lastTimetableSync'] as Timestamp?)?.toDate(),
+      classRemindersEnabled: data['classRemindersEnabled'] as bool? ?? true,
     );
   }
 
@@ -56,6 +59,7 @@ class UserProfileModel {
       'lastTimetableSync': lastTimetableSync != null
           ? Timestamp.fromDate(lastTimetableSync!)
           : null,
+      'classRemindersEnabled': classRemindersEnabled,
     };
   }
 
@@ -68,6 +72,7 @@ class UserProfileModel {
     ProgramGroup? programGroup,
     String? activeSemester,
     DateTime? lastTimetableSync,
+    bool? classRemindersEnabled,
   }) {
     return UserProfileModel(
       uid: uid ?? this.uid,
@@ -78,6 +83,8 @@ class UserProfileModel {
       programGroup: programGroup ?? this.programGroup,
       activeSemester: activeSemester ?? this.activeSemester,
       lastTimetableSync: lastTimetableSync ?? this.lastTimetableSync,
+      classRemindersEnabled:
+          classRemindersEnabled ?? this.classRemindersEnabled,
     );
   }
 }
