@@ -34,6 +34,8 @@ String _formatTime12(String raw) {
   return '${h.toString().padLeft(2, '0')}:$m $period';
 }
 
+enum _View { today, week }
+
 class TimetableTab extends StatefulWidget {
   const TimetableTab({super.key});
 
@@ -44,6 +46,8 @@ class TimetableTab extends StatefulWidget {
 class _TimetableTabState extends State<TimetableTab> {
   final _repo = TimetableRepo();
 
+  _View _view = _View.today;
+
   static const _dayOrder = [
     'Monday',
     'Tuesday',
@@ -53,6 +57,8 @@ class _TimetableTabState extends State<TimetableTab> {
     'Saturday',
     'Sunday',
   ];
+
+  String get _todayName => _dayOrder[DateTime.now().weekday - 1];
 
   Map<String, List<TimetableModel>> _groupByDay(List<TimetableModel> entries) {
     final map = <String, List<TimetableModel>>{};
@@ -83,61 +89,133 @@ class _TimetableTabState extends State<TimetableTab> {
           return _EmptyState();
         }
 
-        final grouped = _groupByDay(entries);
-
         return CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Timetable',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const TimetableImportScreen(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Timetable',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      icon: const Icon(Icons.download_rounded),
-                      label: const Text('Re-import'),
+                        TextButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const TimetableImportScreen(),
+                            ),
+                          ),
+                          icon: const Icon(Icons.download_rounded),
+                          label: const Text('Re-import'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SegmentedButton<_View>(
+                      segments: const [
+                        ButtonSegment(
+                          value: _View.today,
+                          label: Text('Today'),
+                        ),
+                        ButtonSegment(value: _View.week, label: Text('Week')),
+                      ],
+                      selected: {_view},
+                      onSelectionChanged: (selection) =>
+                          setState(() => _view = selection.first),
                     ),
                   ],
                 ),
               ),
             ),
-            for (final day in _dayOrder)
-              if (grouped.containsKey(day)) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Text(
-                      day,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) =>
-                        _TimetableCard(entry: grouped[day]![index]),
-                    childCount: grouped[day]!.length,
-                  ),
-                ),
-              ],
+            ...(_view == _View.today
+                ? _todaySlivers(entries)
+                : _weekSlivers(entries)),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         );
       },
     );
+  }
+
+  List<Widget> _weekSlivers(List<TimetableModel> entries) {
+    final grouped = _groupByDay(entries);
+    return [
+      for (final day in _dayOrder)
+        if (grouped.containsKey(day)) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(
+                day,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => _TimetableCard(entry: grouped[day]![index]),
+              childCount: grouped[day]!.length,
+            ),
+          ),
+        ],
+    ];
+  }
+
+  List<Widget> _todaySlivers(List<TimetableModel> entries) {
+    final today = entries.where((e) => e.day == _todayName).toList()
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    if (today.isEmpty) {
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+            child: Column(
+              children: [
+                Text(
+                  'No classes today 🎉',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Switch to Week to see your full schedule.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
+    }
+
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(
+            _todayName,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      ),
+      SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => _TimetableCard(entry: today[index]),
+          childCount: today.length,
+        ),
+      ),
+    ];
   }
 }
 
