@@ -86,7 +86,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (match != null) {
           final code = match['code'] as String;
           setState(() => _selectedCampusCode = code);
-          await _loadFaculties(code, savedFaculty: savedFaculty);
+          if (code == (_campuses.first['code'] as String?)) {
+            await _loadFaculties(code, savedFaculty: savedFaculty);
+          } else if (mounted) {
+            setState(() => _facultyManual = true);
+          }
         } else {
           if (mounted) setState(() => _campusManual = true);
         }
@@ -131,6 +135,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
   }
+
+  bool get _isFirstCampusSelected =>
+      _campuses.isNotEmpty &&
+      _selectedCampusCode == (_campuses.first['code'] as String?);
 
   Map<String, dynamic>? _findInList(
     List<Map<String, dynamic>> list,
@@ -328,6 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         DropdownButtonFormField<String>(
           initialValue: _selectedCampusCode,
+          isExpanded: true,
           decoration: const InputDecoration(
             labelText: 'Campus',
             border: OutlineInputBorder(),
@@ -350,7 +359,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _selectedFacultyName = null;
                     _facultyManual = false;
                   });
-                  await _loadFaculties(code);
+                  if (code == (_campuses.first['code'] as String?)) {
+                    await _loadFaculties(code);
+                  }
                 },
         ),
         TextButton(
@@ -376,8 +387,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return const _LoadingField(label: 'Faculty');
     }
 
-    final showDropdown = !_facultyManual &&
-        _selectedCampusCode != null &&
+    final showDropdown = _isFirstCampusSelected &&
+        !_facultyManual &&
         _faculties.isNotEmpty;
 
     if (showDropdown) {
@@ -386,6 +397,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           DropdownButtonFormField<String>(
             initialValue: _selectedFacultyName,
+            isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Faculty',
               border: OutlineInputBorder(),
@@ -427,7 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             border: OutlineInputBorder(),
           ),
         ),
-        if (_faculties.isNotEmpty)
+        if (_isFirstCampusSelected && _faculties.isNotEmpty)
           TextButton(
             onPressed: () => setState(() => _facultyManual = false),
             child: const Text('Choose from list'),
