@@ -7,12 +7,21 @@ import 'package:student_reminder_system/features/dashboard/presentation/widgets/
 import 'package:student_reminder_system/features/dashboard/presentation/widgets/welcome_card.dart';
 import 'package:student_reminder_system/features/profile/data/profile_repo.dart';
 import 'package:student_reminder_system/features/profile/data/user_profile_model.dart';
+import 'package:student_reminder_system/features/reminders/data/reminder_model.dart';
+import 'package:student_reminder_system/features/reminders/data/reminder_repo.dart';
 import 'package:student_reminder_system/features/reminders/presentation/reminder_list.dart';
+import 'package:student_reminder_system/features/streak/data/streak_repo.dart';
 
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key, required this.user});
 
   final User user;
+
+  int _streakDays(Map<String, dynamic>? userDoc) {
+    final count = (userDoc?['streakCount'] as int?) ?? 0;
+    final last = userDoc?['lastStreakDate'] as Timestamp?;
+    return displayStreak(count, last?.toDate(), DateTime.now());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,15 +82,25 @@ class HomeTab extends StatelessWidget {
                 DashboardInfoCard(
                   icon: Icons.local_fire_department_rounded,
                   title: 'Streak',
-                  value: '${userDoc?['streakCount'] ?? 0} days',
+                  value: '${_streakDays(userDoc)} days',
                   description: 'Tracks consistent task completion.',
                 ),
                 const SizedBox(height: 12),
-                DashboardInfoCard(
-                  icon: Icons.warning_amber_rounded,
-                  title: 'Missed Deadlines',
-                  value: '${userDoc?['missedDeadlinesCount'] ?? 0}',
-                  description: 'Tracks overdue or missed tasks.',
+                StreamBuilder<List<ReminderModel>>(
+                  stream: ReminderRepo().watchReminders(),
+                  builder: (context, remindersSnap) {
+                    final now = DateTime.now();
+                    final missed = (remindersSnap.data ?? const <ReminderModel>[])
+                        .where((r) => !r.isCompleted && r.dueAt.isBefore(now))
+                        .length;
+
+                    return DashboardInfoCard(
+                      icon: Icons.warning_amber_rounded,
+                      title: 'Missed Deadlines',
+                      value: '$missed',
+                      description: 'Tracks overdue or missed tasks.',
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 Text(

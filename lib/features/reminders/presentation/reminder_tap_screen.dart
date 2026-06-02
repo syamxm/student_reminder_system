@@ -6,6 +6,7 @@ import '../data/reminder_model.dart';
 import '../data/reminder_repo.dart';
 import 'edit_reminder_screen.dart';
 import 'package:student_reminder_system/core/notifications/notification_service.dart';
+import 'package:student_reminder_system/features/streak/data/streak_repo.dart';
 
 class ReminderTapScreen extends StatefulWidget {
   const ReminderTapScreen({super.key, required this.reminderId});
@@ -21,6 +22,7 @@ class ReminderTapScreen extends StatefulWidget {
 class _ReminderTapScreenState extends State<ReminderTapScreen> {
   late final Future<DocumentSnapshot<Map<String, dynamic>>> _reminderFuture;
   final ReminderRepo _reminderRepo = ReminderRepo();
+  final StreakRepo _streakRepo = StreakRepo();
 
   @override
   void initState() {
@@ -70,6 +72,14 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
           reminder.id,
           reminder.reminderDaysBefore,
         );
+      }
+
+      if (markingComplete) {
+        try {
+          await _streakRepo.recordCompletion(dueAt: reminder.dueAt);
+        } catch (_) {
+          // Streak update is best-effort; the reminder is already marked done.
+        }
       }
 
       if (mounted) Navigator.of(context).pop();
