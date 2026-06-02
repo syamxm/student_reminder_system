@@ -198,6 +198,17 @@ class _TimetableTabState extends State<TimetableTab> {
     }
 
     return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(
+            _todayName,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      ),
       SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) => _TimetableCard(entry: today[index]),
