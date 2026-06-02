@@ -8,15 +8,23 @@ import 'package:student_reminder_system/features/timetable/presentation/timetabl
 String _formatTimeRange(String start, String end) =>
     '${_formatTime12(start)} - ${_formatTime12(end)}';
 
-String _formatTime12(String hhmm) {
-  final parts = hhmm.split(':');
-  if (parts.length != 2) return hhmm;
-  final h = int.tryParse(parts[0]);
-  final m = int.tryParse(parts[1]);
-  if (h == null || m == null) return hhmm;
-  final period = h >= 12 ? 'PM' : 'AM';
-  final h12 = h % 12 == 0 ? 12 : h % 12;
-  return '${h12.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')} $period';
+String _formatTime12(String raw) {
+  final match = RegExp(
+    r'^(\d{1,2}):?(\d{2})\s*(AM|PM)?$',
+    caseSensitive: false,
+  ).firstMatch(raw.trim());
+  if (match == null) return raw;
+
+  var h = int.tryParse(match.group(1)!);
+  final m = match.group(2)!;
+  if (h == null) return raw;
+
+  var period = match.group(3)?.toUpperCase();
+  if (period == null) {
+    period = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 == 0 ? 12 : h % 12;
+  }
+  return '${h.toString().padLeft(2, '0')}:$m $period';
 }
 
 class TimetableTab extends StatefulWidget {
