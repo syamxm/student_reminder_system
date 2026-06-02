@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'package:student_reminder_system/core/semester_engine.dart';
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/widgets/dashboard_info_card.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/widgets/welcome_card.dart';
@@ -54,7 +55,13 @@ class ProfileTab extends StatelessWidget {
               DashboardInfoCard(
                 icon: Icons.calendar_today_rounded,
                 title: 'Active Semester',
-                value: profile!.activeSemester!,
+                value: profile!.programGroup != null
+                    ? (findSemester(
+                            profile.programGroup!,
+                            profile.activeSemester!,
+                          )?.label ??
+                          profile.activeSemester!)
+                    : profile.activeSemester!,
                 description: '',
               ),
             if (profile?.activeSemester != null) const SizedBox(height: 12),

@@ -31,9 +31,13 @@ class HomeTab extends StatelessWidget {
           builder: (context, profileSnap) {
             final profile = profileSnap.data;
 
-            final semester = profile?.activeSemester;
-            final week = semester != null ? getCurrentWeek(semester) : 0;
-            final weekLabel = semester != null ? getWeekLabel(week) : null;
+            final group = profile?.programGroup;
+            final code = profile?.activeSemester;
+            final semester = (group != null && code != null)
+                ? findSemester(group, code)
+                : null;
+            final weekLabel =
+                semester != null ? currentStatusLabel(semester) : null;
 
             return ListView(
               padding: const EdgeInsets.all(20),
@@ -48,7 +52,7 @@ class HomeTab extends StatelessWidget {
                 const SizedBox(height: 18),
 
                 if (weekLabel != null) ...[
-                  _WeekCard(semester: semester!, weekLabel: weekLabel),
+                  _WeekCard(semester: semester!.label, weekLabel: weekLabel),
                   const SizedBox(height: 12),
                 ],
 
@@ -129,7 +133,7 @@ class _WeekCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'Semester $semester',
+                  semester,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: cs.onPrimaryContainer.withValues(alpha: 0.8),
                   ),

@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:student_reminder_system/core/semester_engine.dart';
+
 class UserProfileModel {
   const UserProfileModel({
     required this.uid,
@@ -7,6 +9,7 @@ class UserProfileModel {
     required this.displayName,
     this.campus,
     this.faculty,
+    this.programGroup,
     this.activeSemester,
     this.lastTimetableSync,
   });
@@ -16,6 +19,7 @@ class UserProfileModel {
   final String displayName;
   final String? campus;
   final String? faculty;
+  final ProgramGroup? programGroup;
   final String? activeSemester;
   final DateTime? lastTimetableSync;
 
@@ -34,6 +38,7 @@ class UserProfileModel {
       displayName: data['displayName'] as String? ?? '',
       campus: data['campus'] as String?,
       faculty: data['faculty'] as String?,
+      programGroup: programGroupFromCode(data['programGroup'] as String?),
       activeSemester: data['activeSemester'] as String?,
       lastTimetableSync:
           (data['lastTimetableSync'] as Timestamp?)?.toDate(),
@@ -46,6 +51,7 @@ class UserProfileModel {
       'displayName': displayName,
       'campus': campus,
       'faculty': faculty,
+      'programGroup': programGroup != null ? programGroupCode(programGroup!) : null,
       'activeSemester': activeSemester,
       'lastTimetableSync': lastTimetableSync != null
           ? Timestamp.fromDate(lastTimetableSync!)
@@ -59,6 +65,7 @@ class UserProfileModel {
     String? displayName,
     String? campus,
     String? faculty,
+    ProgramGroup? programGroup,
     String? activeSemester,
     DateTime? lastTimetableSync,
   }) {
@@ -68,6 +75,7 @@ class UserProfileModel {
       displayName: displayName ?? this.displayName,
       campus: campus ?? this.campus,
       faculty: faculty ?? this.faculty,
+      programGroup: programGroup ?? this.programGroup,
       activeSemester: activeSemester ?? this.activeSemester,
       lastTimetableSync: lastTimetableSync ?? this.lastTimetableSync,
     );

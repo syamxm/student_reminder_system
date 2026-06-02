@@ -21,6 +21,7 @@ class _TimetableImportScreenState extends State<TimetableImportScreen> {
   final _repo = TimetableRepo();
   final _profileRepo = ProfileRepo();
 
+  ProgramGroup? _programGroup;
   String? _selectedSemester;
   bool _isLoading = false;
   String? _errorMessage;
@@ -40,9 +41,43 @@ class _TimetableImportScreenState extends State<TimetableImportScreen> {
 
   Future<void> _loadActiveSemester() async {
     final profile = await _profileRepo.getProfile();
-    if (profile?.activeSemester != null && mounted) {
-      setState(() => _selectedSemester = profile!.activeSemester);
+    if (profile != null && mounted) {
+      setState(() {
+        _programGroup = profile.programGroup;
+        _selectedSemester = profile.activeSemester;
+      });
     }
+  }
+
+  Widget _buildSemesterDropdown() {
+    final group = _programGroup;
+    final semesters = group != null
+        ? semestersForGroup(group)
+        : <AcademicSemester>[];
+    final codes = semesters.map((s) => s.code).toSet();
+    final value =
+        (_selectedSemester != null && codes.contains(_selectedSemester))
+        ? _selectedSemester
+        : null;
+
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Semester',
+        border: const OutlineInputBorder(),
+        helperText: group == null ? 'Set your program group in Profile' : null,
+      ),
+      items: [
+        const DropdownMenuItem(value: null, child: Text('None')),
+        ...semesters.map(
+          (s) => DropdownMenuItem(value: s.code, child: Text(s.label)),
+        ),
+      ],
+      onChanged: group == null
+          ? null
+          : (v) => setState(() => _selectedSemester = v),
+    );
   }
 
   Future<void> _import() async {
@@ -201,24 +236,7 @@ class _TimetableImportScreenState extends State<TimetableImportScreen> {
 
                   const SizedBox(height: 14),
 
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedSemester,
-                    decoration: const InputDecoration(
-                      labelText: 'Semester',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('None')),
-                      ...semesterStartDates.keys.map((code) {
-                        return DropdownMenuItem(
-                          value: code,
-                          child: Text(semesterLabels[code] ?? code),
-                        );
-                      }),
-                    ],
-                    onChanged: (value) =>
-                        setState(() => _selectedSemester = value),
-                  ),
+                  _buildSemesterDropdown(),
 
                   const SizedBox(height: 24),
 
@@ -346,11 +364,13 @@ class _ManualEntryScreen extends StatefulWidget {
 class _ManualEntryScreenState extends State<_ManualEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   final _repo = TimetableRepo();
+  final _profileRepo = ProfileRepo();
 
   final _subjectCodeController = TextEditingController();
   final _subjectNameController = TextEditingController();
   final _roomController = TextEditingController();
 
+  ProgramGroup? _programGroup;
   String? _selectedDay;
   TimeOfDay _startTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 10, minute: 0);
@@ -367,6 +387,53 @@ class _ManualEntryScreenState extends State<_ManualEntryScreen> {
     'Friday',
     'Saturday',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProgramGroup();
+  }
+
+  Future<void> _loadProgramGroup() async {
+    final profile = await _profileRepo.getProfile();
+    if (profile != null && mounted) {
+      setState(() {
+        _programGroup = profile.programGroup;
+        _selectedSemester = profile.activeSemester;
+      });
+    }
+  }
+
+  Widget _buildSemesterDropdown() {
+    final group = _programGroup;
+    final semesters = group != null
+        ? semestersForGroup(group)
+        : <AcademicSemester>[];
+    final codes = semesters.map((s) => s.code).toSet();
+    final value =
+        (_selectedSemester != null && codes.contains(_selectedSemester))
+        ? _selectedSemester
+        : null;
+
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Semester',
+        border: const OutlineInputBorder(),
+        helperText: group == null ? 'Set your program group in Profile' : null,
+      ),
+      items: [
+        const DropdownMenuItem(value: null, child: Text('None')),
+        ...semesters.map(
+          (s) => DropdownMenuItem(value: s.code, child: Text(s.label)),
+        ),
+      ],
+      onChanged: group == null
+          ? null
+          : (v) => setState(() => _selectedSemester = v),
+    );
+  }
 
   @override
   void dispose() {
@@ -509,23 +576,7 @@ class _ManualEntryScreenState extends State<_ManualEntryScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedSemester,
-                    decoration: const InputDecoration(
-                      labelText: 'Semester',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      const DropdownMenuItem(value: null, child: Text('None')),
-                      ...semesterStartDates.keys.map((code) {
-                        return DropdownMenuItem(
-                          value: code,
-                          child: Text(semesterLabels[code] ?? code),
-                        );
-                      }),
-                    ],
-                    onChanged: (v) => setState(() => _selectedSemester = v),
-                  ),
+                  _buildSemesterDropdown(),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
