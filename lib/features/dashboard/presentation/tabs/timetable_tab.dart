@@ -5,6 +5,20 @@ import 'package:student_reminder_system/features/timetable/data/timetable_repo.d
 import 'package:student_reminder_system/features/timetable/presentation/timetable_edit_screen.dart';
 import 'package:student_reminder_system/features/timetable/presentation/timetable_import_screen.dart';
 
+String _formatTimeRange(String start, String end) =>
+    '${_formatTime12(start)} - ${_formatTime12(end)}';
+
+String _formatTime12(String hhmm) {
+  final parts = hhmm.split(':');
+  if (parts.length != 2) return hhmm;
+  final h = int.tryParse(parts[0]);
+  final m = int.tryParse(parts[1]);
+  if (h == null || m == null) return hhmm;
+  final period = h >= 12 ? 'PM' : 'AM';
+  final h12 = h % 12 == 0 ? 12 : h % 12;
+  return '${h12.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')} $period';
+}
+
 class TimetableTab extends StatefulWidget {
   const TimetableTab({super.key});
 
@@ -195,35 +209,44 @@ class _TimetableCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Row(
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Icon(
-                        Icons.schedule_rounded,
-                        size: 14,
-                        color: cs.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${entry.startTime} – ${entry.endTime}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      if (entry.room.isNotEmpty) ...[
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.room_outlined,
-                          size: 14,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            entry.room,
-                            style: Theme.of(context).textTheme.bodySmall,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 14,
+                            color: cs.onSurfaceVariant,
                           ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatTimeRange(entry.startTime, entry.endTime),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                      if (entry.room.isNotEmpty)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.room_outlined,
+                              size: 14,
+                              color: cs.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                entry.room,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
                     ],
                   ),
                 ],
