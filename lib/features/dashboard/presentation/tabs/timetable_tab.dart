@@ -19,10 +19,17 @@ String _formatTime12(String raw) {
   final m = match.group(2)!;
   if (h == null) return raw;
 
-  var period = match.group(3)?.toUpperCase();
-  if (period == null) {
-    period = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 == 0 ? 12 : h % 12;
+  String? period = match.group(3)?.toUpperCase();
+  if (h >= 13) {
+    h -= 12;
+    period = 'PM';
+  } else if (h == 0) {
+    h = 12;
+    period = 'AM';
+  } else if (h == 12) {
+    period ??= 'PM';
+  } else {
+    period ??= 'AM';
   }
   return '${h.toString().padLeft(2, '0')}:$m $period';
 }
