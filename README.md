@@ -209,6 +209,12 @@ _Coming soon._
 
 ---
 
+## Deployment
+
+The Python timetable backend is **self-hosted** — it runs via Docker Compose on a personal Debian home server, exposed to the app through a Cloudflare Tunnel (see [`backend/DEPLOY.md`](backend/DEPLOY.md)). Firebase Auth, Firestore, and Cloud Functions run on Google Cloud.
+
+---
+
 ## Status
 
 - **Android** — fully functional and tested.
