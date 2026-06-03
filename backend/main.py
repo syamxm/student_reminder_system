@@ -3,14 +3,17 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from contextlib import asynccontextmanager
 
 import firebase_admin
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from firebase_admin import auth, credentials
+from firebase_admin import credentials
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+from cache import close_cache, get_json, init_cache, set_json
+from rate_limit import RateLimit
 from scraper import IcressUnavailableError, ParseError, StudentNotFoundError, scrape_timetable
 
 load_dotenv()
@@ -23,7 +26,19 @@ firebase_admin.initialize_app(credentials.Certificate(_cred_path))
 
 _allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
 
-app = FastAPI(title="Student Reminder Backend")
+# ── Cache TTLs (seconds) ─────────────────────────────────────────────────────
+_TTL_CFC = 24 * 60 * 60      # campuses / faculties: near-static
+_TTL_TIMETABLE = 6 * 60 * 60  # timetable: can change mid-semester
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_cache()
+    yield
+    await close_cache()
+
+
+app = FastAPI(title="Student Reminder Backend", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,19 +62,6 @@ class TimetableRequest(BaseModel):
     semester_code: str = ""
 
 
-def _verify_token(authorization: str | None) -> str:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header.")
-
-    token = authorization.removeprefix("Bearer ").strip()
-
-    try:
-        decoded = auth.verify_id_token(token)
-        return decoded["uid"]
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Token verification failed: {e}") from e
-
-
 def _cfc_get(params: dict) -> list[dict]:
     url = _CFC_URL + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers=_CFC_HEADERS)
@@ -76,16 +78,19 @@ def _cfc_get(params: dict) -> list[dict]:
 @app.post("/api/timetable/scrape")
 async def scrape(
     body: TimetableRequest,
-    authorization: str | None = Header(default=None),
+    uid: str = Depends(RateLimit("scrape", 10, 60)),
 ):
-    _verify_token(authorization)
-
     matric = body.matric_number.strip()
     if not matric:
         raise HTTPException(status_code=422, detail="matric_number is required.")
 
+    cache_key = f"timetable:{matric.upper()}:{body.semester_code}"
+    cached = await get_json(cache_key)
+    if cached is not None:
+        return cached
+
     try:
-        return scrape_timetable(matric, body.semester_code)
+        result = scrape_timetable(matric, body.semester_code)
     except StudentNotFoundError:
         raise HTTPException(status_code=404, detail="student_not_found")
     except IcressUnavailableError:
@@ -93,27 +98,43 @@ async def scrape(
     except ParseError as e:
         raise HTTPException(status_code=502, detail=f"parse_error: {e}")
 
+    await set_json(cache_key, result, _TTL_TIMETABLE)
+    return result
+
 
 @app.get("/api/campuses")
-async def list_campuses(authorization: str | None = Header(default=None)):
-    _verify_token(authorization)
+async def list_campuses(uid: str = Depends(RateLimit("campuses", 30, 60))):
+    cache_key = "cfc:campuses"
+    cached = await get_json(cache_key)
+    if cached is not None:
+        return cached
+
     items = _cfc_get({"method": _CAMPUS_METHOD, "key": "All", "page": "1", "page_limit": "200"})
-    return {"campuses": [{"code": i["id"], "name": i["text"]} for i in items]}
+    result = {"campuses": [{"code": i["id"], "name": i["text"]} for i in items]}
+    await set_json(cache_key, result, _TTL_CFC)
+    return result
 
 
 @app.get("/api/faculties")
 async def list_faculties(
     campus: str,
-    authorization: str | None = Header(default=None),
+    uid: str = Depends(RateLimit("faculties", 30, 60)),
 ):
-    _verify_token(authorization)
     if not campus:
         raise HTTPException(status_code=422, detail="campus query param is required.")
+
+    cache_key = f"cfc:faculties:{campus}"
+    cached = await get_json(cache_key)
+    if cached is not None:
+        return cached
+
     items = _cfc_get({
         "method": _FACULTY_METHOD, "campus": campus,
         "key": "All", "page": "1", "page_limit": "200",
     })
-    return {"faculties": [{"code": i["id"], "name": i["text"]} for i in items]}
+    result = {"faculties": [{"code": i["id"], "name": i["text"]} for i in items]}
+    await set_json(cache_key, result, _TTL_CFC)
+    return result
 
 
 @app.get("/health")
