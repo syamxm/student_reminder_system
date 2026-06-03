@@ -17,6 +17,18 @@ localhost:8000       ← FastAPI / uvicorn
 
 No nginx required. Cloudflare Tunnel handles SSL and routing directly.
 
+The backend uses **Redis** for response caching (campuses, faculties, timetables)
+and per-user rate limiting. Redis is **optional at runtime** — if it is
+unreachable the backend fails open (skips cache + rate limiting and serves
+directly from the UiTM upstream). Set `REDIS_URL` in `.env`
+(default `redis://localhost:6379/0`).
+
+Two ways to run it:
+- **Docker Compose** (recommended, brings up Redis for you) — see the section at
+  the end of this file.
+- **systemd** (steps below) — install Redis separately:
+  `doas apt install redis-server && doas systemctl enable --now redis-server`.
+
 ---
 
 ## Step 1 — System dependencies (on Debian)
@@ -195,6 +207,36 @@ https://api.yourdomain.com
 ```
 
 The app sends the user's Firebase ID token with every request. The backend verifies it — no other auth needed.
+
+---
+
+## Docker Compose (Redis + backend)
+
+`docker-compose.yml` runs the FastAPI backend and Redis together. The backend
+talks to Redis over the internal `redis` hostname, so `REDIS_URL` is set
+automatically inside the container.
+
+```bash
+cd /opt/student-reminder-backend/backend
+
+# .env still needed for ALLOWED_ORIGINS (GOOGLE_APPLICATION_CREDENTIALS and
+# REDIS_URL are overridden by compose)
+cp .env.example .env && nano .env
+
+# Place the Firebase key next to the compose file (mounted read-only into the container)
+# serviceAccountKey.json -> /app/serviceAccountKey.json
+
+docker compose up --build -d
+curl http://localhost:8000/health   # {"status":"ok"}
+```
+
+Point Cloudflare Tunnel at `http://localhost:8000` exactly as in the systemd
+path. Inspect cache keys with:
+
+```bash
+docker compose exec redis redis-cli KEYS '*'
+docker compose exec redis redis-cli TTL cfc:campuses
+```
 
 ---
 
