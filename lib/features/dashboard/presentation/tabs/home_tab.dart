@@ -54,9 +54,6 @@ class HomeTab extends StatelessWidget {
                 WelcomeCard(
                   displayName:
                       userDoc?['displayName'] as String? ?? 'Student',
-                  email: userDoc?['email'] as String? ?? user.email ?? '',
-                  authProvider:
-                      userDoc?['authProvider'] as String? ?? 'unknown',
                 ),
                 const SizedBox(height: 18),
 

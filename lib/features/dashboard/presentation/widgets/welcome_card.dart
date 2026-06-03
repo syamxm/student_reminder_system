@@ -4,15 +4,9 @@ class WelcomeCard extends StatelessWidget {
   const WelcomeCard({
     super.key,
     required this.displayName,
-    required this.email,
-    required this.authProvider,
-    this.username,
   });
 
   final String displayName;
-  final String email;
-  final String authProvider;
-  final String? username;
 
   @override
   Widget build(BuildContext context) {
@@ -22,24 +16,11 @@ class WelcomeCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       child: Padding(
         padding: const EdgeInsets.all(22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome, $displayName',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              username != null
-                  ? '@$username'
-                  : (email.isEmpty ? 'No email found' : email),
-            ),
-            const SizedBox(height: 12),
-            Chip(label: Text('Signed in with $authProvider')),
-          ],
+        child: Text(
+          'Welcome, $displayName',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
     );
