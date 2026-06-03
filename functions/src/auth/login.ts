@@ -15,7 +15,8 @@ const INVALID = new HttpsError(
 
 const MAX_ATTEMPTS = 5;
 const WINDOW_MS = 15 * 60 * 1000;
-const LOCK_MS = 15 * 60 * 1000;
+// TODO: restore to 15 * 60 * 1000 before production — 1 min is a test value.
+const LOCK_MS = 1 * 60 * 1000;
 
 export const loginWithUsername = onCall(async (request) => {
   const data = request.data ?? {};

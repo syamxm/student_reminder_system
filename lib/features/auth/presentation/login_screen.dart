@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
+import 'widgets/password_field.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -137,14 +138,11 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 14),
 
-                  TextField(
+                  PasswordField(
                     controller: _passwordController,
                     enabled: !_isLoading,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
                   ),
                   const SizedBox(height: 20),
 

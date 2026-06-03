@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
+import 'package:student_reminder_system/features/auth/presentation/widgets/password_field.dart';
 
 class ChangePasswordDialog extends StatefulWidget {
   const ChangePasswordDialog({super.key, required this.repository});
@@ -14,6 +15,7 @@ class ChangePasswordDialog extends StatefulWidget {
 class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   final _oldController = TextEditingController();
   final _newController = TextEditingController();
+  final _confirmController = TextEditingController();
 
   bool _isSaving = false;
   String? _error;
@@ -22,6 +24,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   void dispose() {
     _oldController.dispose();
     _newController.dispose();
+    _confirmController.dispose();
     super.dispose();
   }
 
@@ -31,6 +34,10 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
 
     if (newPassword.length < 8) {
       setState(() => _error = 'New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword != _confirmController.text) {
+      setState(() => _error = 'Passwords do not match.');
       return;
     }
 
@@ -64,18 +71,22 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(
+          PasswordField(
             controller: _oldController,
             enabled: !_isSaving,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Current password'),
+            labelText: 'Current password',
           ),
           const SizedBox(height: 12),
-          TextField(
+          PasswordField(
             controller: _newController,
             enabled: !_isSaving,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'New password'),
+            labelText: 'New password',
+          ),
+          const SizedBox(height: 12),
+          PasswordField(
+            controller: _confirmController,
+            enabled: !_isSaving,
+            labelText: 'Confirm new password',
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),

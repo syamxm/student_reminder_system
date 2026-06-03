@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
+import 'widgets/password_field.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key, required this.repository});
@@ -160,14 +161,11 @@ class _SignupScreenState extends State<SignupScreen>
                   ),
                   const SizedBox(height: 14),
 
-                  TextField(
+                  PasswordField(
                     controller: _passwordController,
                     enabled: !_isLoading,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
                   ),
                   const SizedBox(height: 20),
 
