@@ -36,4 +36,13 @@ class ProfileRepo {
   Future<void> saveProfile(UserProfileModel profile) async {
     await _profileRef.set(profile.toMap(), SetOptions(merge: true));
   }
+
+  Future<({String? username, String authProvider})> getAccountInfo() async {
+    final doc = await _firestore.collection('users').doc(_uid).get();
+    final data = doc.data();
+    return (
+      username: data?['username'] as String?,
+      authProvider: (data?['authProvider'] as String?) ?? 'google',
+    );
+  }
 }

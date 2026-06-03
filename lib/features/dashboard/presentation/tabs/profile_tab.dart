@@ -18,6 +18,22 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<({String? username, String authProvider})>(
+      future: ProfileRepo().getAccountInfo(),
+      builder: (context, accountSnapshot) {
+        final account = accountSnapshot.data;
+        final isUsername = account?.authProvider == 'username';
+
+        return _buildContent(context, account, isUsername);
+      },
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    ({String? username, String authProvider})? account,
+    bool isUsername,
+  ) {
     return StreamBuilder<UserProfileModel?>(
       stream: ProfileRepo().watchProfile(),
       builder: (context, snapshot) {
@@ -28,8 +44,9 @@ class ProfileTab extends StatelessWidget {
           children: [
             WelcomeCard(
               displayName: profile?.displayName ?? user.displayName ?? 'Student',
-              email: profile?.email ?? user.email ?? '',
-              authProvider: 'google',
+              email: isUsername ? '' : (profile?.email ?? user.email ?? ''),
+              username: isUsername ? account?.username : null,
+              authProvider: account?.authProvider ?? 'google',
             ),
             const SizedBox(height: 18),
 
@@ -75,7 +92,8 @@ class ProfileTab extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => ProfileScreen(user: user),
+                    builder: (_) =>
+                      ProfileScreen(user: user, repository: repository),
                   ),
                 );
               },

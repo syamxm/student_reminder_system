@@ -1,15 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthRepo {
-  AuthRepo({FirebaseAuth? firebaseAuth, FirebaseFirestore? firestore})
-    : _auth = firebaseAuth ?? FirebaseAuth.instance,
-      _firestore = firestore ?? FirebaseFirestore.instance;
+  AuthRepo({
+    FirebaseAuth? firebaseAuth,
+    FirebaseFirestore? firestore,
+    FirebaseFunctions? functions,
+  }) : _auth = firebaseAuth ?? FirebaseAuth.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance,
+       _functions =
+           functions ??
+           FirebaseFunctions.instanceFor(region: 'asia-southeast1');
 
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
+  final FirebaseFunctions _functions;
 
   Stream<User?> authStateChanges() {
     return _auth.authStateChanges();
@@ -56,6 +64,69 @@ class AuthRepo {
     );
 
     return credential;
+  }
+
+  Future<void> signUpWithUsername({
+    required String displayName,
+    required String username,
+    required String password,
+  }) async {
+    // Creates the account but does not sign in; the user logs in afterwards.
+    await _callForToken('signupWithUsername', {
+      'displayName': displayName,
+      'username': username,
+      'password': password,
+    });
+  }
+
+  Future<UserCredential> signInWithUsername({
+    required String username,
+    required String password,
+  }) async {
+    final token = await _callForToken('loginWithUsername', {
+      'username': username,
+      'password': password,
+    });
+
+    return _auth.signInWithCustomToken(token);
+  }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _functions.httpsCallable('changePassword').call({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'Could not change password.');
+    }
+  }
+
+  Future<void> deleteAccount({String password = ''}) async {
+    try {
+      await _functions.httpsCallable('deleteAccount').call({
+        'password': password,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'Could not delete account.');
+    }
+    await signOut();
+  }
+
+  Future<String> _callForToken(
+    String functionName,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final result = await _functions.httpsCallable(functionName).call(data);
+      final payload = Map<String, dynamic>.from(result.data as Map);
+      return payload['token'] as String;
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'Authentication failed.');
+    }
   }
 
   Future<void> signOut() async {

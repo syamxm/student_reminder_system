@@ -3,16 +3,24 @@ import 'package:flutter/material.dart';
 
 import 'package:student_reminder_system/core/api/timetable_api.dart';
 import 'package:student_reminder_system/core/semester_engine.dart';
+import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
 import '../data/profile_repo.dart';
 import '../data/user_profile_model.dart';
+import 'change_password_dialog.dart';
+import 'delete_account_dialog.dart';
 
 const _rawFirstCampus = 'SELANGOR CAMPUS - ( Please Select a Faculty )';
 const _firstCampusLabel = 'UITM SHAH ALAM';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, required this.user});
+  const ProfileScreen({
+    super.key,
+    required this.user,
+    required this.repository,
+  });
 
   final User user;
+  final AuthRepo repository;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -28,6 +36,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   ProgramGroup? _selectedGroup;
   String? _selectedSemester;
+  String? _username;
+  String _authProvider = 'google';
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -54,6 +64,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
+    final account = await _repo.getAccountInfo();
+    _username = account.username;
+    _authProvider = account.authProvider;
+
     final profile = await _repo.getProfile();
 
     String? savedCampus;
@@ -212,6 +226,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _changePassword() async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => ChangePasswordDialog(repository: widget.repository),
+    );
+
+    if (changed == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password changed.')),
+      );
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    // On success the dialog signs the user out and AuthGate navigates away.
+    await showDialog<void>(
+      context: context,
+      builder: (_) => DeleteAccountDialog(
+        repository: widget.repository,
+        authProvider: _authProvider,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -250,14 +288,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  TextFormField(
-                    initialValue: widget.user.email ?? '',
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
+                  if (_authProvider == 'username')
+                    TextFormField(
+                      initialValue: _username ?? '',
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Username',
+                        border: OutlineInputBorder(),
+                      ),
+                    )
+                  else
+                    TextFormField(
+                      initialValue: widget.user.email ?? '',
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 14),
 
                   // Campus
@@ -315,6 +363,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             )
                           : const Icon(Icons.save_rounded),
                       label: Text(_isSaving ? 'Saving...' : 'Save Profile'),
+                    ),
+                  ),
+
+                  if (_authProvider == 'username') ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isSaving ? null : _changePassword,
+                        icon: const Icon(Icons.lock_reset_rounded),
+                        label: const Text('Change Password'),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isSaving ? null : _deleteAccount,
+                      icon: const Icon(Icons.delete_forever_rounded),
+                      label: const Text('Delete Account'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ),
                 ],

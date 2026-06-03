@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
-import 'login_screen.dart';
+import 'widgets/password_field.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key, required this.repository});
@@ -56,18 +56,46 @@ class _SignupScreenState extends State<SignupScreen>
     }
   }
 
-  void _showUsernameSignupComingSoon() {
-    _showMessage(
-      'Username signup will be connected with Cloud Functions later.',
-    );
+  static final _usernameRe = RegExp(r'^[a-zA-Z0-9_]{3,20}$');
+
+  Future<void> _signUpWithUsername() async {
+    final displayName = _displayNameController.text.trim();
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (displayName.isEmpty) {
+      _showMessage('Enter a display name.');
+      return;
+    }
+    if (!_usernameRe.hasMatch(username)) {
+      _showMessage('Username must be 3-20 letters, digits, or underscores.');
+      return;
+    }
+    if (password.length < 8) {
+      _showMessage('Password must be at least 8 characters.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await widget.repository.signUpWithUsername(
+        displayName: displayName,
+        username: username,
+        password: password,
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      _showMessage('Sign-up failed: ${_errorText(error)}');
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
+  String _errorText(Object error) => error is Exception
+      ? error.toString().replaceFirst('Exception: ', '')
+      : '$error';
+
   void _openLoginScreen() {
-    Navigator.of(context).pop(
-      MaterialPageRoute(
-        builder: (_) => LoginScreen(repository: widget.repository),
-      ),
-    );
+    Navigator.of(context).pop();
   }
 
   void _showMessage(String message) {
@@ -107,7 +135,7 @@ class _SignupScreenState extends State<SignupScreen>
                   const SizedBox(height: 8),
 
                   Text(
-                    'Username signup UI is ready. Backend will be added using Cloud Functions later.',
+                    'Pick a username and password to get started.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
@@ -133,21 +161,16 @@ class _SignupScreenState extends State<SignupScreen>
                   ),
                   const SizedBox(height: 14),
 
-                  TextField(
+                  PasswordField(
                     controller: _passwordController,
                     enabled: !_isLoading,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
                   ),
                   const SizedBox(height: 20),
 
                   FilledButton(
-                    onPressed: _isLoading
-                        ? null
-                        : _showUsernameSignupComingSoon,
+                    onPressed: _isLoading ? null : _signUpWithUsername,
                     child: const Text('Sign up'),
                   ),
                   const SizedBox(height: 12),
@@ -160,7 +183,7 @@ class _SignupScreenState extends State<SignupScreen>
                   const SizedBox(height: 20),
                   TextButton(
                     onPressed: _isLoading ? null : _openLoginScreen,
-                    child: const Text('Create a new account'),
+                    child: const Text('Already have an account? Log in'),
                   ),
 
                   if (_isLoading) ...[

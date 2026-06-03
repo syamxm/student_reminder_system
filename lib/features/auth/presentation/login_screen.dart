@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
+import 'widgets/password_field.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -49,18 +50,41 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _showUsernameLoginComingSoon() {
-    _showMessage(
-      'Username login will be connected with Cloud Functions later.',
-    );
+  Future<void> _signInWithUsername() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      _showMessage('Enter your username and password.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await widget.repository.signInWithUsername(
+        username: username,
+        password: password,
+      );
+    } catch (error) {
+      _showMessage('Login failed: ${_errorText(error)}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
-  void _openSignupScreen() {
-    Navigator.of(context).push(
+  String _errorText(Object error) =>
+      error is Exception ? error.toString().replaceFirst('Exception: ', '') : '$error';
+
+  Future<void> _openSignupScreen() async {
+    final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => SignupScreen(repository: widget.repository),
       ),
     );
+
+    if (created == true) {
+      _showMessage('Account created. Please log in.');
+    }
   }
 
   void _showMessage(String message) {
@@ -114,19 +138,16 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 14),
 
-                  TextField(
+                  PasswordField(
                     controller: _passwordController,
                     enabled: !_isLoading,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
+                    labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline),
                   ),
                   const SizedBox(height: 20),
 
                   FilledButton(
-                    onPressed: _isLoading ? null : _showUsernameLoginComingSoon,
+                    onPressed: _isLoading ? null : _signInWithUsername,
                     child: const Text('Login'),
                   ),
                   const SizedBox(height: 12),
