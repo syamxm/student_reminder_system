@@ -65,20 +65,6 @@ class HomeTab extends StatelessWidget {
                   const SizedBox(height: 12),
                 ],
 
-                const DashboardInfoCard(
-                  icon: Icons.task_alt_rounded,
-                  title: 'Tasks',
-                  value: 'Active',
-                  description: 'Assignments, homework, and study reminders.',
-                ),
-                const SizedBox(height: 12),
-                const DashboardInfoCard(
-                  icon: Icons.calendar_month_rounded,
-                  title: 'Timetable',
-                  value: 'Soon',
-                  description: 'Weekly class schedule and study sessions.',
-                ),
-                const SizedBox(height: 12),
                 DashboardInfoCard(
                   icon: Icons.local_fire_department_rounded,
                   title: 'Streak',

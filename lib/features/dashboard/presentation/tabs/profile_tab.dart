@@ -6,7 +6,6 @@ import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/widgets/dashboard_info_card.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/widgets/welcome_card.dart';
 import 'package:student_reminder_system/core/notifications/class_notification_sync.dart';
-import 'package:student_reminder_system/core/notifications/notification_service.dart';
 import 'package:student_reminder_system/features/profile/data/profile_repo.dart';
 import 'package:student_reminder_system/features/profile/data/user_profile_model.dart';
 import 'package:student_reminder_system/features/profile/presentation/profile_screen.dart';
@@ -34,25 +33,27 @@ class ProfileTab extends StatelessWidget {
             ),
             const SizedBox(height: 18),
 
-            if (profile?.campus != null)
+            if (profile?.campus != null) ...[
               DashboardInfoCard(
                 icon: Icons.location_city_rounded,
                 title: 'Campus',
                 value: profile!.campus!,
                 description: '',
               ),
-            if (profile?.campus != null) const SizedBox(height: 12),
+              const SizedBox(height: 12),
+            ],
 
-            if (profile?.faculty != null)
+            if (profile?.faculty != null) ...[
               DashboardInfoCard(
                 icon: Icons.school_rounded,
                 title: 'Faculty',
                 value: profile!.faculty!,
                 description: '',
               ),
-            if (profile?.faculty != null) const SizedBox(height: 12),
+              const SizedBox(height: 12),
+            ],
 
-            if (profile?.activeSemester != null)
+            if (profile?.activeSemester != null) ...[
               DashboardInfoCard(
                 icon: Icons.calendar_today_rounded,
                 title: 'Active Semester',
@@ -65,15 +66,10 @@ class ProfileTab extends StatelessWidget {
                     : profile.activeSemester!,
                 description: '',
               ),
-            if (profile?.activeSemester != null) const SizedBox(height: 12),
+              const SizedBox(height: 12),
+            ],
 
-            DashboardInfoCard(
-              icon: Icons.badge_outlined,
-              title: 'User ID',
-              value: 'View',
-              description: user.uid,
-            ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 6),
 
             OutlinedButton.icon(
               onPressed: () {
@@ -112,25 +108,6 @@ class ProfileTab extends StatelessWidget {
               icon: const Icon(Icons.logout_rounded),
               label: const Text('Logout'),
             ),
-            const SizedBox(height: 12),
-
-            FilledButton.icon(
-              onPressed: () async {
-                await NotificationService.instance.showDebugNotification();
-              },
-              icon: const Icon(Icons.notifications_active_outlined),
-              label: const Text('Send debug notification'),
-            ),
-            const SizedBox(height: 12),
-
-            OutlinedButton.icon(
-              onPressed: () async {
-                await NotificationService.instance.scheduleDebugNotification();
-              },
-              icon: const Icon(Icons.schedule_outlined),
-              label: const Text('Schedule 10-second notification'),
-            ),
-            const SizedBox(height: 12),
           ],
         );
       },
