@@ -7,6 +7,7 @@ import 'package:student_reminder_system/features/auth/data/auth_repo.dart';
 import '../data/profile_repo.dart';
 import '../data/user_profile_model.dart';
 import 'change_password_dialog.dart';
+import 'delete_account_dialog.dart';
 
 const _rawFirstCampus = 'SELANGOR CAMPUS - ( Please Select a Faculty )';
 const _firstCampusLabel = 'UITM SHAH ALAM';
@@ -238,6 +239,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    // On success the dialog signs the user out and AuthGate navigates away.
+    await showDialog<void>(
+      context: context,
+      builder: (_) => DeleteAccountDialog(
+        repository: widget.repository,
+        authProvider: _authProvider,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -365,6 +377,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                   ],
+
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isSaving ? null : _deleteAccount,
+                      icon: const Icon(Icons.delete_forever_rounded),
+                      label: const Text('Delete Account'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

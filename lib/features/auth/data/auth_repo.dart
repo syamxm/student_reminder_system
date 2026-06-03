@@ -105,6 +105,17 @@ class AuthRepo {
     }
   }
 
+  Future<void> deleteAccount({String password = ''}) async {
+    try {
+      await _functions.httpsCallable('deleteAccount').call({
+        'password': password,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'Could not delete account.');
+    }
+    await signOut();
+  }
+
   Future<String> _callForToken(
     String functionName,
     Map<String, dynamic> data,
