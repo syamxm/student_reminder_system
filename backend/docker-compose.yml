@@ -18,7 +18,7 @@ services:
     volumes:
       - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
     ports:
-      - "8000:8000"
+      - "6767:6767"
 
 volumes:
   redis-data:
