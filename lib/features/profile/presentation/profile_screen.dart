@@ -6,6 +6,9 @@ import 'package:student_reminder_system/core/semester_engine.dart';
 import '../data/profile_repo.dart';
 import '../data/user_profile_model.dart';
 
+const _rawFirstCampus = 'SELANGOR CAMPUS - ( Please Select a Faculty )';
+const _firstCampusLabel = 'UITM SHAH ALAM';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, required this.user});
 
@@ -77,6 +80,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) setState(() => _campusesLoading = true);
     try {
       final campuses = await _api.fetchCampuses();
+      if (campuses.isNotEmpty) {
+        campuses.first['name'] = _firstCampusLabel;
+      }
       if (!mounted) return;
       setState(() {
         _campuses = campuses;
@@ -84,6 +90,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
 
       if (savedCampus != null && savedCampus.isNotEmpty) {
+        // Old profiles may have stored the raw first-campus name.
+        if (savedCampus == _rawFirstCampus) savedCampus = _firstCampusLabel;
         final match = _findInList(_campuses, 'name', savedCampus);
         if (match != null) {
           final code = match['code'] as String;
