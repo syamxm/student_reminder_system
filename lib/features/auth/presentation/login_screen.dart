@@ -49,11 +49,30 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _showUsernameLoginComingSoon() {
-    _showMessage(
-      'Username login will be connected with Cloud Functions later.',
-    );
+  Future<void> _signInWithUsername() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      _showMessage('Enter your username and password.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await widget.repository.signInWithUsername(
+        username: username,
+        password: password,
+      );
+    } catch (error) {
+      _showMessage('Login failed: ${_errorText(error)}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
+
+  String _errorText(Object error) =>
+      error is Exception ? error.toString().replaceFirst('Exception: ', '') : '$error';
 
   void _openSignupScreen() {
     Navigator.of(context).push(
@@ -126,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   const SizedBox(height: 20),
 
                   FilledButton(
-                    onPressed: _isLoading ? null : _showUsernameLoginComingSoon,
+                    onPressed: _isLoading ? null : _signInWithUsername,
                     child: const Text('Login'),
                   ),
                   const SizedBox(height: 12),
