@@ -199,13 +199,13 @@ All API routes require a Firebase ID token (`Authorization: Bearer <token>`). Fo
 
 ## Screenshots
 
-_Coming soon._
-
-<!-- Add screenshots here, e.g.:
-| Dashboard | Reminders | Timetable |
+| Home | Reminders (by category) | Reminders (by subject) |
 | --- | --- | --- |
-| ![](docs/dashboard.png) | ![](docs/reminders.png) | ![](docs/timetable.png) |
--->
+| <img src="screenshots/home_tab.jpeg" width="240"/> | <img src="screenshots/reminder_tab_test.jpeg" width="240"/> | <img src="screenshots/reminder_tab_by_group.jpeg" width="240"/> |
+
+| Timetable (today) | Timetable (week) | Profile |
+| --- | --- | --- |
+| <img src="screenshots/timetable_tab_today.jpeg" width="240"/> | <img src="screenshots/timetable_tab_week.jpeg" width="240"/> | <img src="screenshots/profile_tab.jpeg" width="240"/> |
 
 ---
 
