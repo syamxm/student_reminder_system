@@ -66,18 +66,17 @@ class AuthRepo {
     return credential;
   }
 
-  Future<UserCredential> signUpWithUsername({
+  Future<void> signUpWithUsername({
     required String displayName,
     required String username,
     required String password,
   }) async {
-    final token = await _callForToken('signupWithUsername', {
+    // Creates the account but does not sign in; the user logs in afterwards.
+    await _callForToken('signupWithUsername', {
       'displayName': displayName,
       'username': username,
       'password': password,
     });
-
-    return _auth.signInWithCustomToken(token);
   }
 
   Future<UserCredential> signInWithUsername({
@@ -90,6 +89,20 @@ class AuthRepo {
     });
 
     return _auth.signInWithCustomToken(token);
+  }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _functions.httpsCallable('changePassword').call({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      });
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'Could not change password.');
+    }
   }
 
   Future<String> _callForToken(

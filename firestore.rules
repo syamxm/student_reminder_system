@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read, create, update, delete: if isOwner(userId);
+
+      match /reminders/{reminderId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /timetable/{timetableId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+
+      match /profile/{document} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
+    }
+
+    // Server-only collections (written by Cloud Functions via Admin SDK).
+    match /credentials/{doc} {
+      allow read, write: if false;
+    }
+
+    match /loginAttempts/{doc} {
+      allow read, write: if false;
+    }
+  }
+}

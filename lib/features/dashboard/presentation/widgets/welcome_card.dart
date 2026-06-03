@@ -6,11 +6,13 @@ class WelcomeCard extends StatelessWidget {
     required this.displayName,
     required this.email,
     required this.authProvider,
+    this.username,
   });
 
   final String displayName;
   final String email;
   final String authProvider;
+  final String? username;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +32,11 @@ class WelcomeCard extends StatelessWidget {
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            Text(email.isEmpty ? 'No email found' : email),
+            Text(
+              username != null
+                  ? '@$username'
+                  : (email.isEmpty ? 'No email found' : email),
+            ),
             const SizedBox(height: 12),
             Chip(label: Text('Signed in with $authProvider')),
           ],

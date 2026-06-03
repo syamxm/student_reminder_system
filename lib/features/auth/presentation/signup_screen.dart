@@ -82,9 +82,9 @@ class _SignupScreenState extends State<SignupScreen>
         username: username,
         password: password,
       );
+      if (mounted) Navigator.of(context).pop(true);
     } catch (error) {
       _showMessage('Sign-up failed: ${_errorText(error)}');
-    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -185,7 +185,7 @@ class _SignupScreenState extends State<SignupScreen>
                   const SizedBox(height: 20),
                   TextButton(
                     onPressed: _isLoading ? null : _openLoginScreen,
-                    child: const Text('Create a new account'),
+                    child: const Text('Already have an account? Log in'),
                   ),
 
                   if (_isLoading) ...[

@@ -19,6 +19,16 @@ export function assertValidCredentials(
     );
   }
 
+  assertValidPassword(password);
+}
+
+/**
+ * Validate a password, throwing an HttpsError when too short.
+ * @param {unknown} password Raw password from the request.
+ */
+export function assertValidPassword(
+  password: unknown,
+): asserts password is string {
   if (typeof password !== "string" || password.length < MIN_PASSWORD) {
     throw new HttpsError(
       "invalid-argument",

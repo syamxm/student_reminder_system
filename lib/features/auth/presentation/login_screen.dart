@@ -74,12 +74,16 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   String _errorText(Object error) =>
       error is Exception ? error.toString().replaceFirst('Exception: ', '') : '$error';
 
-  void _openSignupScreen() {
-    Navigator.of(context).push(
+  Future<void> _openSignupScreen() async {
+    final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => SignupScreen(repository: widget.repository),
       ),
     );
+
+    if (created == true) {
+      _showMessage('Account created. Please log in.');
+    }
   }
 
   void _showMessage(String message) {
