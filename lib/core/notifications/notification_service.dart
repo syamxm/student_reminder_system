@@ -107,8 +107,23 @@ class NotificationService {
         >();
 
     final granted = await androidPlugin?.requestNotificationsPermission();
+    await androidPlugin?.requestExactAlarmsPermission();
 
     return granted ?? true;
+  }
+
+  Future<AndroidScheduleMode> _scheduleMode() async {
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    final canExact =
+        await androidPlugin?.canScheduleExactNotifications() ?? false;
+
+    return canExact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
   }
 
   static const String _reminderChannelId = 'reminder_due_channel';
@@ -186,7 +201,7 @@ class NotificationService {
         body: label,
         scheduledDate: scheduledDate,
         notificationDetails: _reminderNotificationDetails(),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: await _scheduleMode(),
         payload: NotificationPayload.reminder(reminderId: reminderId),
       );
 
@@ -231,7 +246,7 @@ class NotificationService {
       title: 'Reminder: $title',
       scheduledDate: scheduledDate,
       notificationDetails: _reminderNotificationDetails(),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: await _scheduleMode(),
       payload: NotificationPayload.reminder(reminderId: reminderId),
     );
 
@@ -290,7 +305,7 @@ class NotificationService {
       body: body,
       scheduledDate: scheduledDate,
       notificationDetails: _classNotificationDetails(),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: await _scheduleMode(),
       payload: NotificationPayload.classReminder(entryId: entryId),
     );
 
