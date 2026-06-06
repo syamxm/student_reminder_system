@@ -6,16 +6,31 @@
 Flutter app
     │  HTTPS (Firebase JWT in header)
     ▼
-api.yourdomain.com   ← Cloudflare Tunnel handles SSL
+api.yourdomain.com        ← Cloudflare Tunnel handles SSL
     │
     ▼
-cloudflared (running on Debian)
+cloudflared (Docker)      ← dockerized tunnel, ingress: api.* → http://nginx-proxy:80
     │
     ▼
-localhost:8000       ← FastAPI / uvicorn
+nginx-proxy (Docker)      ← shared reverse proxy, server_name api.* → http://backend:8000
+    │
+    ▼
+backend:8000              ← FastAPI / uvicorn (Docker)
 ```
 
-No nginx required. Cloudflare Tunnel handles SSL and routing directly.
+The backend shares a reverse proxy (`nginx-proxy`) with the other subdomains
+rather than being exposed by the tunnel directly. All containers talk over the
+external Docker network **`proxy-net`**. The nginx-proxy stack lives outside this
+repo (in `~/nginx`); its `conf.d/default.conf` has an `api.<domain>` server block
+that does `proxy_pass http://backend:8000;`.
+
+> The Cloudflare public hostname for `api.<domain>` must point at the **dockerized
+> tunnel** (started by `docker compose` below), not an old systemd `cloudflared`.
+> A stale DNS record pointing at a dead tunnel returns Cloudflare error 1033.
+
+A pure systemd setup (no Docker, tunnel straight to `localhost:8000`) is still
+possible — see the alternative steps below — but the Docker Compose path is
+primary.
 
 The backend uses **Redis** for response caching (campuses, faculties, timetables)
 and per-user rate limiting. Redis is **optional at runtime** — if it is
@@ -210,11 +225,12 @@ The app sends the user's Firebase ID token with every request. The backend verif
 
 ---
 
-## Docker Compose (Redis + backend)
+## Docker Compose (Redis + backend) — primary
 
 `docker-compose.yml` runs the FastAPI backend and Redis together. The backend
 talks to Redis over the internal `redis` hostname, so `REDIS_URL` is set
-automatically inside the container.
+automatically inside the container. The backend joins the external `proxy-net`
+network so `nginx-proxy` can reach it as `http://backend:8000`.
 
 ```bash
 cd /opt/student-reminder-backend/backend
@@ -226,12 +242,28 @@ cp .env.example .env && nano .env
 # Place the Firebase key next to the compose file (mounted read-only into the container)
 # serviceAccountKey.json -> /app/serviceAccountKey.json
 
+# proxy-net is shared with nginx-proxy; create it once if it does not exist
+docker network inspect proxy-net >/dev/null 2>&1 || docker network create proxy-net
+
 docker compose up --build -d
-curl http://localhost:8000/health   # {"status":"ok"}
+curl http://localhost:8000/health   # {"status":"ok"}  (direct, bypasses nginx)
 ```
 
-Point Cloudflare Tunnel at `http://localhost:8000` exactly as in the systemd
-path. Inspect cache keys with:
+Routing to the internet goes through the shared `nginx-proxy` + the dockerized
+Cloudflare Tunnel (not `localhost:8000` directly):
+
+- `~/nginx/conf.d/default.conf` — `server_name api.<domain>` → `proxy_pass http://backend:8000;`
+- dockerized `cloudflared` ingress — `api.<domain>` → `http://nginx-proxy:80`
+- Cloudflare DNS — `api` CNAME → `<dockerized-tunnel-UUID>.cfargotunnel.com` (proxied)
+
+Verify the internal hop and the public endpoint:
+
+```bash
+docker exec nginx-proxy wget -qO- http://backend:8000/health   # {"status":"ok"}
+curl https://api.yourdomain.com/health                          # {"status":"ok"}
+```
+
+Inspect cache keys with:
 
 ```bash
 docker compose exec redis redis-cli KEYS '*'

@@ -19,6 +19,13 @@ services:
       - ./serviceAccountKey.json:/app/serviceAccountKey.json:ro
     ports:
       - "127.0.0.1:8000:8000"
+    networks:
+      - default
+      - proxy-net
 
 volumes:
   redis-data:
+
+networks:
+  proxy-net:
+    external: true
