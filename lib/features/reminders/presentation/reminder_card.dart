@@ -312,12 +312,17 @@ class ReminderCard extends StatelessWidget {
   }
 
   static String _formatDateTime(DateTime dt) {
-    final y = dt.year.toString();
-    final mo = dt.month.toString().padLeft(2, '0');
     final d = dt.day.toString().padLeft(2, '0');
-    final h = dt.hour.toString().padLeft(2, '0');
+    final mo = dt.month.toString().padLeft(2, '0');
+    final y = dt.year.toString();
+
+    final period = dt.hour >= 12 ? 'PM' : 'AM';
+    var h = dt.hour % 12;
+    if (h == 0) h = 12;
+    final hh = h.toString().padLeft(2, '0');
     final mi = dt.minute.toString().padLeft(2, '0');
-    return '$y-$mo-$d $h:$mi';
+
+    return '$d/$mo/$y $hh:$mi $period';
   }
 }
 
