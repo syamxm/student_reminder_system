@@ -5,6 +5,10 @@ import 'package:student_reminder_system/features/timetable/data/timetable_repo.d
 import 'package:student_reminder_system/features/timetable/presentation/timetable_edit_screen.dart';
 import 'package:student_reminder_system/features/timetable/presentation/timetable_import_screen.dart';
 
+String _formatDate(DateTime d) =>
+    '${d.day.toString().padLeft(2, '0')}/'
+    '${d.month.toString().padLeft(2, '0')}/${d.year}';
+
 String _formatTimeRange(String start, String end) =>
     '${_formatTime12(start)} - ${_formatTime12(end)}';
 
@@ -59,6 +63,12 @@ class _TimetableTabState extends State<TimetableTab> {
   ];
 
   String get _todayName => _dayOrder[DateTime.now().weekday - 1];
+
+  DateTime _dateForDay(String day) {
+    final now = DateTime.now();
+    final monday = now.subtract(Duration(days: now.weekday - 1));
+    return monday.add(Duration(days: _dayOrder.indexOf(day)));
+  }
 
   Map<String, List<TimetableModel>> _groupByDay(List<TimetableModel> entries) {
     final map = <String, List<TimetableModel>>{};
@@ -152,7 +162,7 @@ class _TimetableTabState extends State<TimetableTab> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Text(
-                day,
+                '$day  ${_formatDate(_dateForDay(day))}',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -202,7 +212,7 @@ class _TimetableTabState extends State<TimetableTab> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: Text(
-            _todayName,
+            '$_todayName  ${_formatDate(DateTime.now())}',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
               color: Theme.of(context).colorScheme.primary,
             ),
