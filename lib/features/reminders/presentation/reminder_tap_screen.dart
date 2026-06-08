@@ -30,6 +30,14 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
     _reminderFuture = _loadReminder();
   }
 
+  Future<void> _recordStreak(DateTime dueAt) async {
+    try {
+      await _streakRepo.recordCompletion(dueAt: dueAt);
+    } catch (_) {
+      // Streak update is best-effort; the reminder is already marked done.
+    }
+  }
+
   Future<DocumentSnapshot<Map<String, dynamic>>> _loadReminder() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) throw Exception('User is not logged in.');
@@ -46,39 +54,31 @@ class _ReminderTapScreenState extends State<ReminderTapScreen> {
     try {
       final markingComplete = !reminder.isCompleted;
 
-      if (markingComplete && reminder.recurrence != ReminderRecurrence.none) {
-        await _reminderRepo.advanceRecurringReminder(reminder);
-        final nextDue = reminder.recurrence.nextDueDate(reminder.dueAt)!;
+      await _reminderRepo.setReminderCompletion(
+        reminderId: reminder.id,
+        isCompleted: markingComplete,
+      );
+
+      if (markingComplete) {
+        await NotificationService.instance.cancelAllReminderNotifications(
+          reminder.id,
+          reminder.reminderDaysBefore,
+        );
+        await _recordStreak(reminder.dueAt);
+      } else {
         await NotificationService.instance.scheduleReminderNotification(
           reminderId: reminder.id,
           title: reminder.title,
           description: reminder.description,
-          dueAt: nextDue,
+          dueAt: reminder.dueAt,
         );
         if (reminder.reminderDaysBefore.isNotEmpty) {
           await NotificationService.instance.scheduleEarlyReminders(
             reminderId: reminder.id,
             title: reminder.title,
-            dueAt: nextDue,
+            dueAt: reminder.dueAt,
             dayOffsets: reminder.reminderDaysBefore,
           );
-        }
-      } else {
-        await _reminderRepo.setReminderCompletion(
-          reminderId: reminder.id,
-          isCompleted: markingComplete,
-        );
-        await NotificationService.instance.cancelAllReminderNotifications(
-          reminder.id,
-          reminder.reminderDaysBefore,
-        );
-      }
-
-      if (markingComplete) {
-        try {
-          await _streakRepo.recordCompletion(dueAt: reminder.dueAt);
-        } catch (_) {
-          // Streak update is best-effort; the reminder is already marked done.
         }
       }
 

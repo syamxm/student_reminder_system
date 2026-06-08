@@ -5,6 +5,7 @@ import 'package:student_reminder_system/features/dashboard/presentation/tabs/hom
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/profile_tab.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/reminders_tab.dart';
 import 'package:student_reminder_system/features/dashboard/presentation/tabs/timetable_tab.dart';
+import 'package:student_reminder_system/features/reminders/data/reminder_recurrence_sync.dart';
 import 'package:student_reminder_system/features/reminders/presentation/add_reminder_screen.dart';
 import '../../../core/notifications/class_notification_sync.dart';
 import '../../../core/notifications/notification_tap_router.dart';
@@ -33,6 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       NotificationTapRouter.openPendingIfPossible();
       ClassNotificationSync().sync();
+      ReminderRecurrenceSync().sync();
     });
   }
 

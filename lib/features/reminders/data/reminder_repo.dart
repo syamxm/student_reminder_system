@@ -86,15 +86,12 @@ class ReminderRepo {
     await _remindersRef.doc(reminderId).delete();
   }
 
-  Future<void> advanceRecurringReminder(ReminderModel reminder) async {
-    final nextDue = reminder.recurrence.nextDueDate(reminder.dueAt);
-
-    if (nextDue == null) {
-      throw StateError('Cannot advance non-recurring reminder.');
-    }
-
-    await _remindersRef.doc(reminder.id).update({
-      'dueAt': Timestamp.fromDate(nextDue),
+  Future<void> rescheduleRecurringTo({
+    required String reminderId,
+    required DateTime dueAt,
+  }) async {
+    await _remindersRef.doc(reminderId).update({
+      'dueAt': Timestamp.fromDate(dueAt),
       'isCompleted': false,
       'updatedAt': FieldValue.serverTimestamp(),
     });
