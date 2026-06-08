@@ -142,32 +142,53 @@ class _ReminderListState extends State<ReminderList> {
     bool isCompleted,
   ) async {
     try {
-      await _reminderRepo.setReminderCompletion(
-        reminderId: reminder.id,
-        isCompleted: isCompleted,
-      );
-
-      if (isCompleted) {
-        await _recordStreak(reminder.dueAt);
-        await NotificationService.instance.cancelAllReminderNotifications(
-          reminder.id,
-          reminder.reminderDaysBefore,
-        );
-      } else {
+      if (isCompleted && reminder.recurrence != ReminderRecurrence.none) {
+        await _reminderRepo.advanceRecurringReminder(reminder);
+        final nextDue = reminder.recurrence.nextDueDate(reminder.dueAt)!;
         await NotificationService.instance.scheduleReminderNotification(
           reminderId: reminder.id,
           title: reminder.title,
           description: reminder.description,
-          dueAt: reminder.dueAt,
+          dueAt: nextDue,
         );
         if (reminder.reminderDaysBefore.isNotEmpty) {
           await NotificationService.instance.scheduleEarlyReminders(
             reminderId: reminder.id,
             title: reminder.title,
-            dueAt: reminder.dueAt,
+            dueAt: nextDue,
             dayOffsets: reminder.reminderDaysBefore,
           );
         }
+      } else {
+        await _reminderRepo.setReminderCompletion(
+          reminderId: reminder.id,
+          isCompleted: isCompleted,
+        );
+        if (isCompleted) {
+          await NotificationService.instance.cancelAllReminderNotifications(
+            reminder.id,
+            reminder.reminderDaysBefore,
+          );
+        } else {
+          await NotificationService.instance.scheduleReminderNotification(
+            reminderId: reminder.id,
+            title: reminder.title,
+            description: reminder.description,
+            dueAt: reminder.dueAt,
+          );
+          if (reminder.reminderDaysBefore.isNotEmpty) {
+            await NotificationService.instance.scheduleEarlyReminders(
+              reminderId: reminder.id,
+              title: reminder.title,
+              dueAt: reminder.dueAt,
+              dayOffsets: reminder.reminderDaysBefore,
+            );
+          }
+        }
+      }
+
+      if (isCompleted) {
+        await _recordStreak(reminder.dueAt);
       }
     } catch (error) {
       if (mounted) {
