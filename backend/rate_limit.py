@@ -22,9 +22,10 @@ def RateLimit(name: str, times: int, seconds: int):
 
         key = f"rl:{name}:{uid}"
         try:
-            count = await client.incr(key)
-            if count == 1:
-                await client.expire(key, seconds)
+            async with client.pipeline(transaction=True) as pipe:
+                pipe.incr(key)
+                pipe.expire(key, seconds, nx=True)
+                count, _ = await pipe.execute()
         except Exception as e:
             log.warning("rate limit check failed for %s: %s", key, e)
             return uid

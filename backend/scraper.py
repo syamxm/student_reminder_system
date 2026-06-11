@@ -1,5 +1,6 @@
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 
 CDN_URL = "https://cdn.uitm.link/jadual/baru/{matric}.json"
@@ -22,7 +23,7 @@ class ParseError(Exception):
 
 
 def scrape_timetable(matric_number: str, semester_code: str = "") -> dict:
-    url = CDN_URL.format(matric=matric_number.strip().upper())
+    url = CDN_URL.format(matric=urllib.parse.quote(matric_number.strip().upper(), safe=""))
     req = urllib.request.Request(url, headers=_HEADERS)
 
     try:

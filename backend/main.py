@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -17,6 +19,8 @@ from rate_limit import RateLimit
 from scraper import IcressUnavailableError, ParseError, StudentNotFoundError, scrape_timetable
 
 load_dotenv()
+
+log = logging.getLogger("api")
 
 _cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 if not _cred_path:
@@ -56,6 +60,10 @@ _CFC_HEADERS = {
 _CAMPUS_METHOD = "CAM_lII1II11I1lIIII11IIl1I111I"
 _FACULTY_METHOD = "FAC_lII1II11I1lIIII11IIl1I111I"
 
+_MATRIC_RE = re.compile(r"^[A-Za-z0-9]{5,12}$")
+_SEMESTER_RE = re.compile(r"^[A-Za-z0-9]{0,8}$")
+_CAMPUS_RE = re.compile(r"^[A-Za-z0-9]{1,8}$")
+
 
 class TimetableRequest(BaseModel):
     matric_number: str
@@ -72,7 +80,8 @@ def _cfc_get(params: dict) -> list[dict]:
         items = data if isinstance(data, list) else data.get("results", [])
         return [i for i in items if isinstance(i, dict) and i.get("id") not in ("X", "", None)]
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Campus/faculty API unavailable: {e}")
+        log.warning("CFC request failed: %s", e)
+        raise HTTPException(status_code=503, detail="Campus/faculty API unavailable")
 
 
 @app.post("/api/timetable/scrape")
@@ -81,8 +90,10 @@ async def scrape(
     uid: str = Depends(RateLimit("scrape", 10, 60)),
 ):
     matric = body.matric_number.strip()
-    if not matric:
-        raise HTTPException(status_code=422, detail="matric_number is required.")
+    if not _MATRIC_RE.fullmatch(matric):
+        raise HTTPException(status_code=422, detail="Invalid matric_number.")
+    if not _SEMESTER_RE.fullmatch(body.semester_code):
+        raise HTTPException(status_code=422, detail="Invalid semester_code.")
 
     cache_key = f"timetable:{matric.upper()}:{body.semester_code}"
     cached = await get_json(cache_key)
@@ -96,7 +107,8 @@ async def scrape(
     except IcressUnavailableError:
         raise HTTPException(status_code=503, detail="iCRESS_unavailable")
     except ParseError as e:
-        raise HTTPException(status_code=502, detail=f"parse_error: {e}")
+        log.warning("parse error for %s: %s", matric, e)
+        raise HTTPException(status_code=502, detail="parse_error")
 
     await set_json(cache_key, result, _TTL_TIMETABLE)
     return result
@@ -120,8 +132,8 @@ async def list_faculties(
     campus: str,
     uid: str = Depends(RateLimit("faculties", 30, 60)),
 ):
-    if not campus:
-        raise HTTPException(status_code=422, detail="campus query param is required.")
+    if not _CAMPUS_RE.fullmatch(campus):
+        raise HTTPException(status_code=422, detail="Invalid campus code.")
 
     cache_key = f"cfc:faculties:{campus}"
     cached = await get_json(cache_key)
