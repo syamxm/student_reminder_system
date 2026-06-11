@@ -1,5 +1,9 @@
+import logging
+
 from fastapi import Header, HTTPException
 from firebase_admin import auth
+
+log = logging.getLogger("auth")
 
 
 def require_uid(authorization: str | None = Header(default=None)) -> str:
@@ -13,4 +17,5 @@ def require_uid(authorization: str | None = Header(default=None)) -> str:
         decoded = auth.verify_id_token(token)
         return decoded["uid"]
     except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Token verification failed: {e}") from e
+        log.warning("Token verification failed: %s", e)
+        raise HTTPException(status_code=401, detail="Invalid or expired token.") from e
