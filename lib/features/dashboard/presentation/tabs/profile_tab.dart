@@ -1,3 +1,6 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:student_reminder_system/core/theme_provider.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -99,6 +102,27 @@ class ProfileTab extends StatelessWidget {
                         await ClassNotificationSync().sync();
                       },
               ),
+            ),
+            const SizedBox(height: 12),
+
+            Consumer(
+              builder: (context, ref, _) {
+                final mode = ref.watch(themeModeProvider);
+                return Card(
+                  margin: EdgeInsets.zero,
+                  child: SwitchListTile(
+                    secondary: Icon(
+                      mode == ThemeMode.dark
+                          ? Icons.dark_mode_outlined
+                          : Icons.light_mode_outlined,
+                    ),
+                    title: const Text('Dark mode'),
+                    subtitle: const Text('Switch app appearance'),
+                    value: mode == ThemeMode.dark,
+                    onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
 

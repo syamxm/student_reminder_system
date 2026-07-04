@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:student_reminder_system/core/notifications/notification_service.dart';
 
@@ -21,7 +22,7 @@ Future<void> main() async {
     );
   }
 
-  runApp(const StudentReminderApp());
+  runApp(const ProviderScope(child: StudentReminderApp()));
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     NotificationService.instance.init().catchError((error, stackTrace) {
