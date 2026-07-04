@@ -38,6 +38,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   bool _subjectsLoading = true;
 
   bool _isSaving = false;
+  bool _isShowingError = false;
 
   @override
   void initState() {
@@ -293,6 +294,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -315,14 +317,57 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
     if (pickedTime == null) return;
 
+    final now = DateTime.now();
+    final isToday =
+        _selectedDate.year == now.year &&
+        _selectedDate.month == now.month &&
+        _selectedDate.day == now.day;
+
+    if (isToday) {
+      final picked = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        pickedTime.hour,
+        pickedTime.minute,
+      );
+      if (picked.isBefore(now)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Time already passed. Pick future time.'),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     setState(() {
       _selectedTime = pickedTime;
     });
   }
 
   Future<void> _saveReminder() async {
+    if (_isSaving || _isShowingError) return;
+
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) return;
+
+    if (_dueAt.isBefore(DateTime.now())) {
+      setState(() => _isShowingError = true);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Due date must be in the future.'),
+            duration: Duration(seconds: 2),
+          ),
+        ).closed.then((_) {
+          if (mounted) setState(() => _isShowingError = false);
+        });
+      return;
+    }
 
     setState(() => _isSaving = true);
 
